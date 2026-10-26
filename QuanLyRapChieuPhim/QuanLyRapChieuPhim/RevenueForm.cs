@@ -1,0 +1,8 @@
+namespace QuanLyRapChieuPhim;
+
+public class RevenueForm : Form
+{
+    readonly DataGridView grid=Ui.Grid();readonly DateTimePicker from=new(){Format=DateTimePickerFormat.Short};readonly DateTimePicker to=new(){Format=DateTimePickerFormat.Short};readonly Label total=new(){AutoSize=true,Padding=new Padding(8)};
+    public RevenueForm(){BackColor=Ui.MainBack;ForeColor=Ui.MainText;Font=new Font("Segoe UI",9);Text="Thống kê doanh thu";Width=850;Height=550;var p=Ui.Flow();p.Controls.Add(Ui.Lab("Từ ngày"));p.Controls.Add(from);p.Controls.Add(Ui.Lab("Đến ngày"));p.Controls.Add(to);var b=Ui.Btn("Thống kê");b.Click+=(_,_)=>LoadReport();p.Controls.Add(b);p.Controls.Add(total);Controls.Add(grid);Controls.Add(p);from.Value=DateTime.Today.AddDays(-30);to.Value=DateTime.Today;LoadReport();}
+    void LoadReport(){if(from.Value.Date>to.Value.Date){MessageBox.Show("Ngày bắt đầu phải trước ngày kết thúc.");return;}var data=AppData.Tickets.Where(t=>t.SoldAt.Date>=from.Value.Date&&t.SoldAt.Date<=to.Value.Date).GroupBy(t=>new{t.MovieTitle,Ngay=t.SoldAt.Date}).Select(g=>new{g.Key.MovieTitle,Ngay=g.Key.Ngay,SoVe=g.Count(),DoanhThu=g.Sum(x=>x.Price)}).OrderBy(x=>x.Ngay).ThenBy(x=>x.MovieTitle).ToList();grid.DataSource=data;if(grid.Columns["MovieTitle"]!=null)grid.Columns["MovieTitle"]!.HeaderText="Phim";if(grid.Columns["Ngay"]!=null)grid.Columns["Ngay"]!.HeaderText="Ngày";if(grid.Columns["SoVe"]!=null)grid.Columns["SoVe"]!.HeaderText="Số vé";if(grid.Columns["DoanhThu"]!=null)grid.Columns["DoanhThu"]!.HeaderText="Doanh thu";total.Text=$"Tổng doanh thu: {data.Sum(x=>x.DoanhThu):N0} VNĐ | Số vé: {data.Sum(x=>x.SoVe)}";}
+}

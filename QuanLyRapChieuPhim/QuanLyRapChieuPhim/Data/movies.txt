@@ -1,0 +1,6 @@
+PC001;Conan;Hoạt Hình;110;C:\Users\Admin\Pictures\6b8b41d2-ed34-41ad-b658-cfb59a8ac11b.jpg
+P001;Lật Mặt;Hành Động;120;
+P002;Bố Già;Tâm Lý;128;
+P003;Mắt Biếc;Tình Cảm;117;
+P004;Naruto;Hoạt Hình;120;
+P005;Doraemon;Hoạt Hình;95;
