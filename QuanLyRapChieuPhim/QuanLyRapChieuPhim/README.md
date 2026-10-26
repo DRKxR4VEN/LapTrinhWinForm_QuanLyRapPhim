@@ -10,9 +10,13 @@
 2. Mở `QuanLyRapChieuPhim.csproj` bằng Visual Studio.
 3. Chọn cấu hình `Debug`, nhấn F5.
 4. Tài khoản mặc định:
-   - Quản trị: `admin` / `123`
-   - Nhân viên: `nhanvien` / `123`
+   - Quản trị: `admin` / `123` – toàn quyền.
+   - Nhân viên: `nhanvien` / `123` – chỉ **Bán vé** và **Đổi giao diện**.
 5. Dữ liệu mẫu được copy vào thư mục `Data` cạnh file chạy; nếu thiếu, chương trình tự tạo thư mục/tập tin khi khởi động.
+
+## Phân quyền
+- **Quản trị:** sao lưu/khôi phục, quản lý phim, phòng chiếu, suất chiếu, bán vé, xem doanh thu, đổi giao diện.
+- **Nhân viên:** bán vé và đổi giao diện; không thấy các mục quản lý phim, phòng chiếu, suất chiếu, doanh thu, sao lưu/khôi phục.
 
 ## Các chức năng
 - Đăng nhập đọc `Data/users.txt`, khóa tài khoản sau 3 lần sai trong phiên chạy.

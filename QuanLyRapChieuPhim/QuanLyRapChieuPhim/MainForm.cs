@@ -11,21 +11,27 @@ public class MainForm : Form
         Width=1200; Height=760; IsMdiContainer=true; StartPosition=FormStartPosition.CenterScreen;
         BackColor=Ui.MainBack; ForeColor=Ui.MainText; Font=new Font("Segoe UI",10);
         var menu=new MenuStrip { BackColor=Color.White, ForeColor=Ui.MainText, Font=new Font("Segoe UI",10), Padding=new Padding(8,5,0,5) };
+        var isAdmin=user.Role=="QuanTri";
         var sys=new ToolStripMenuItem("Hệ thống");
-        var backup=new ToolStripMenuItem("Sao lưu dữ liệu",null,(_,_)=>Backup());
-        var restore=new ToolStripMenuItem("Khôi phục dữ liệu",null,(_,_)=>Restore());
-        sys.DropDownItems.Add(backup); sys.DropDownItems.Add(restore);
-        sys.DropDownItems.Add(new ToolStripSeparator());
-        sys.DropDownItems.Add("Đổi giao diện",null,(_,_)=>Open(new SettingsForm()));
-        sys.DropDownItems.Add("Thoát",null,(_,_)=>Close());
+        if(isAdmin)
+        {
+            sys.DropDownItems.Add(new ToolStripMenuItem("Sao lưu dữ liệu",null,(_,_)=>Backup()));
+            sys.DropDownItems.Add(new ToolStripMenuItem("Khôi phục dữ liệu",null,(_,_)=>Restore()));
+            sys.DropDownItems.Add(new ToolStripSeparator());
+        }
+        sys.DropDownItems.Add(new ToolStripMenuItem("Đổi giao diện",null,(_,_)=>Open(new SettingsForm())));
+        sys.DropDownItems.Add(new ToolStripMenuItem("Thoát",null,(_,_)=>Close()));
         var manage=new ToolStripMenuItem("Quản lý");
-        manage.DropDownItems.Add("Phim",null,(_,_)=>Open(new MovieForm()));
-        manage.DropDownItems.Add("Phòng chiếu",null,(_,_)=>Open(new RoomForm()));
-        manage.DropDownItems.Add("Suất chiếu",null,(_,_)=>Open(new ScreeningForm()));
-        manage.DropDownItems.Add("Bán vé",null,(_,_)=>Open(new TicketForm()));
-        manage.DropDownItems.Add("Doanh thu",null,(_,_)=>Open(new RevenueForm()));
+        if(isAdmin)
+        {
+            manage.DropDownItems.Add(new ToolStripMenuItem("Phim",null,(_,_)=>Open(new MovieForm())));
+            manage.DropDownItems.Add(new ToolStripMenuItem("Phòng chiếu",null,(_,_)=>Open(new RoomForm())));
+            manage.DropDownItems.Add(new ToolStripMenuItem("Suất chiếu",null,(_,_)=>Open(new ScreeningForm())));
+        }
+        manage.DropDownItems.Add(new ToolStripMenuItem("Bán vé",null,(_,_)=>Open(new TicketForm())));
+        if(isAdmin)
+            manage.DropDownItems.Add(new ToolStripMenuItem("Doanh thu",null,(_,_)=>Open(new RevenueForm())));
         menu.Items.Add(sys); menu.Items.Add(manage); MainMenuStrip=menu; Controls.Add(menu);
-        if(user.Role!="QuanTri") { backup.Enabled=false; restore.Enabled=false; }
         var mdi=Controls.OfType<MdiClient>().FirstOrDefault();
         if(mdi!=null) mdi.BackColor=Ui.MainBack;
         var welcome=new Panel { Dock=DockStyle.Fill, BackColor=Ui.MainBack, Padding=new Padding(30) };
@@ -39,6 +45,12 @@ public class MainForm : Form
     }
     void Open(Form form)
     {
+        if(user.Role!="QuanTri" && form is not TicketForm && form is not SettingsForm)
+        {
+            MessageBox.Show("Bạn không có quyền truy cập chức năng này.","Phân quyền",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            form.Dispose();
+            return;
+        }
         foreach(Form f in MdiChildren) if(f.GetType()==form.GetType()){f.Activate();form.Dispose();return;}
         form.MdiParent=this; form.Show();
     }
