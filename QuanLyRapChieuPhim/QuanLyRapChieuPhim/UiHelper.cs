@@ -6,6 +6,9 @@ public static class Ui
     public static readonly Color MainText = Color.FromArgb(35, 45, 60);
     public static readonly Color Accent = Color.FromArgb(35, 110, 220);
 
+    public static string Money(decimal value)
+        => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) + " đ";
+
     public static DataGridView Grid()
     {
         return new DataGridView {

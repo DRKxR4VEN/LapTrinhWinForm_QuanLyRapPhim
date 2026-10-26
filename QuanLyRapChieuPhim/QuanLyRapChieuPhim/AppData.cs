@@ -17,11 +17,54 @@ public static class AppConfig
     public static decimal StudentDiscount => decimal.TryParse(Get("StudentDiscount","0.15"), NumberStyles.Any, CultureInfo.InvariantCulture, out var n) ? n : .15m;
     public static decimal AdultDiscount => decimal.TryParse(Get("AdultDiscount","0"), NumberStyles.Any, CultureInfo.InvariantCulture, out var n) ? n : 0m;
     public static int CleaningMinutes => int.TryParse(Get("CleaningMinutes","15"), out var n) ? n : 15;
+
+    public static string CinemaName => Get("CinemaName", "RẠP CHIẾU PHIM SAO MAI");
+    public static string DataFolder => Get("DataFolder", "Data");
+    public static decimal VipSurcharge => decimal.TryParse(Get("VipSurcharge","1.5"), NumberStyles.Any, CultureInfo.InvariantCulture, out var n) && n >= 1m ? n : 1.5m;
+    public static int RefundBeforeHours => int.TryParse(Get("RefundBeforeHours","1"), out var n) && n >= 0 ? n : 1;
+
+    static IReadOnlyList<SnackCombo>? snackCombos;
+
+    /// <summary>Danh sách combo bắp nước, mỗi mục có dạng "Tên:Giá" và ngăn cách bằng dấu phẩy.</summary>
+    public static IReadOnlyList<SnackCombo> SnackCombos
+    {
+        get
+        {
+            if (snackCombos != null)
+                return snackCombos;
+
+            var result = new List<SnackCombo>();
+            foreach (var part in Get("SnackCombos", "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var separator = part.LastIndexOf(':');
+                if (separator <= 0)
+                    continue;
+
+                var name = part[..separator].Trim();
+                if (name.Length == 0)
+                    continue;
+
+                if (decimal.TryParse(part[(separator + 1)..].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var price) && price >= 0)
+                    result.Add(new SnackCombo { Name = name, Price = price });
+            }
+
+            return snackCombos = result;
+        }
+    }
 }
 
 public static class FileHelper
 {
-    public static string DataDir => Path.Combine(AppContext.BaseDirectory, "Data");
+    public static string DataDir
+    {
+        get
+        {
+            var folder = AppConfig.DataFolder;
+            return Path.IsPathRooted(folder)
+                ? folder
+                : Path.Combine(AppContext.BaseDirectory, folder);
+        }
+    }
 
     public static void EnsureDataDir() => Directory.CreateDirectory(DataDir);
 
@@ -104,7 +147,10 @@ public static class FileHelper
         }
     }
 
-    public static void Log(Exception ex)
+    public static void Log(Exception ex) => Log(ex.ToString());
+
+    /// <summary>Ghi một thông điệp (không phải ngoại lệ) vào Data/log.txt.</summary>
+    public static void Log(string message)
     {
         try
         {
@@ -115,7 +161,7 @@ public static class FileHelper
                 true,
                 new UTF8Encoding(false));
 
-            writer.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}");
+            writer.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
         }
         catch
         {
@@ -130,6 +176,7 @@ public static class AppData
     public static List<CinemaRoom> Rooms = new();
     public static List<Screening> Screenings = new();
     public static List<Ticket> Tickets = new();
+    public static List<Refund> Refunds = new();
     public static List<AppUser> Users = new();
     public static void Initialize()
     {
@@ -138,6 +185,7 @@ public static class AppData
         Rooms=FileHelper.Read("rooms.txt", CinemaRoom.FromLine);
         Screenings=FileHelper.Read("screenings.txt", Screening.FromLine);
         Tickets=FileHelper.Read("tickets.txt", Ticket.FromLine);
+        Refunds=FileHelper.Read("trave.txt", Refund.FromLine);
         Users=FileHelper.Read("users.txt", AppUser.FromLine);
         if (Users.Count==0)
         {
@@ -150,7 +198,21 @@ public static class AppData
     public static void SaveRooms()=>FileHelper.Write("rooms.txt",Rooms);
     public static void SaveScreenings()=>FileHelper.Write("screenings.txt",Screenings);
     public static void SaveTickets()=>FileHelper.Write("tickets.txt",Tickets);
+    public static void SaveRefunds()=>FileHelper.Write("trave.txt",Refunds);
     public static void SaveUsers()=>FileHelper.Write("users.txt",Users);
+
+    /// <summary>Sinh mã vé mới, không trùng với vé đã có.</summary>
+    public static string NewTicketId()
+    {
+        string id;
+        do
+        {
+            id = "V" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        }
+        while (Tickets.Any(t => t.Id == id) || Refunds.Any(r => r.TicketId == id));
+
+        return id;
+    }
     /// <summary>
     /// Tìm suất chiếu bị trùng giờ trong cùng phòng.
     /// Khoảng chiếm phòng = thời lượng phim + số phút dọn phòng trong App.config.

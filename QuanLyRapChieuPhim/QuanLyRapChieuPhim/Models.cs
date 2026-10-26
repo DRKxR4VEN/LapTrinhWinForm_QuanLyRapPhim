@@ -51,8 +51,80 @@ public class Ticket
     public string CustomerType { get; set; } = "Người lớn";
     public decimal Price { get; set; }
     public DateTime SoldAt { get; set; } = DateTime.Now;
-    public override string ToString() => string.Join(";", Id, ScreeningId, MovieTitle, RoomName, ShowTime.ToString("O"), Seat, IsVip, CustomerType, Price.ToString(CultureInfo.InvariantCulture), SoldAt.ToString("O"));
-    public static Ticket FromLine(string s) { var p=s.Split(';'); return new Ticket { Id=p[0], ScreeningId=p[1], MovieTitle=p[2], RoomName=p[3], ShowTime=DateTime.Parse(p[4], null, DateTimeStyles.RoundtripKind), Seat=p[5], IsVip=bool.Parse(p[6]), CustomerType=p[7], Price=decimal.Parse(p[8], CultureInfo.InvariantCulture), SoldAt=DateTime.Parse(p[9], null, DateTimeStyles.RoundtripKind) }; }
+    public string ComboName { get; set; } = "";
+    public decimal ComboPrice { get; set; }
+    public decimal Total => Price + ComboPrice;
+    public override string ToString() => string.Join(";", Id, ScreeningId, MovieTitle, RoomName, ShowTime.ToString("O"), Seat, IsVip, CustomerType, Price.ToString(CultureInfo.InvariantCulture), SoldAt.ToString("O"), ComboName, ComboPrice.ToString(CultureInfo.InvariantCulture));
+    public static Ticket FromLine(string s)
+    {
+        var p = s.Split(';');
+        if (p.Length < 10)
+            throw new FormatException($"Vé cần tối thiểu 10 trường, dòng chỉ có {p.Length}.");
+
+        return new Ticket
+        {
+            Id = p[0],
+            ScreeningId = p[1],
+            MovieTitle = p[2],
+            RoomName = p[3],
+            ShowTime = DateTime.Parse(p[4], null, DateTimeStyles.RoundtripKind),
+            Seat = p[5],
+            IsVip = bool.Parse(p[6]),
+            CustomerType = p[7],
+            Price = decimal.Parse(p[8], CultureInfo.InvariantCulture),
+            SoldAt = DateTime.Parse(p[9], null, DateTimeStyles.RoundtripKind),
+            // Hai trường combo được thêm sau, dữ liệu vé cũ chỉ có 10 trường.
+            ComboName = p.Length > 10 ? p[10] : "",
+            ComboPrice = p.Length > 11 ? decimal.Parse(p[11], CultureInfo.InvariantCulture) : 0m
+        };
+    }
+}
+
+/// <summary>Một lựa chọn bắp nước bán kèm vé. Giá đọc từ App.config.</summary>
+public class SnackCombo
+{
+    public string Name { get; set; } = "";
+    public decimal Price { get; set; }
+    public string Display => Price > 0
+        ? $"{Name} (+{Price.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ)"
+        : Name;
+    public override string ToString() => Display;
+}
+
+/// <summary>Biên bản trả vé, lưu ở Data/trave.txt để đối soát doanh thu.</summary>
+public class Refund
+{
+    public string TicketId { get; set; } = "";
+    public string ScreeningId { get; set; } = "";
+    public string MovieTitle { get; set; } = "";
+    public string RoomName { get; set; } = "";
+    public string Seat { get; set; } = "";
+    public string CustomerType { get; set; } = "";
+    public string ComboName { get; set; } = "";
+    public decimal Amount { get; set; }
+    public DateTime ShowTime { get; set; }
+    public DateTime RefundedAt { get; set; } = DateTime.Now;
+    public override string ToString() => string.Join(";", TicketId, ScreeningId, MovieTitle, RoomName, Seat, CustomerType, ComboName, Amount.ToString(CultureInfo.InvariantCulture), ShowTime.ToString("O"), RefundedAt.ToString("O"));
+    public static Refund FromLine(string s)
+    {
+        var p = s.Split(';');
+        if (p.Length < 10)
+            throw new FormatException($"Biên bản trả vé cần 10 trường, dòng chỉ có {p.Length}.");
+
+        return new Refund
+        {
+            TicketId = p[0],
+            ScreeningId = p[1],
+            MovieTitle = p[2],
+            RoomName = p[3],
+            Seat = p[4],
+            CustomerType = p[5],
+            ComboName = p[6],
+            Amount = decimal.Parse(p[7], CultureInfo.InvariantCulture),
+            ShowTime = DateTime.Parse(p[8], null, DateTimeStyles.RoundtripKind),
+            RefundedAt = DateTime.Parse(p[9], null, DateTimeStyles.RoundtripKind)
+        };
+    }
 }
 
 public class AppUser
