@@ -253,20 +253,96 @@ public static class AppData
         => FindConflict(candidate, movie) != null;
     public static bool HasSoldTickets(string screeningId)=>Tickets.Any(t=>t.ScreeningId==screeningId);
     public static string SeatKey(string screeningId,string seat)=>screeningId+"|"+seat;
+
+    const string RegistryPath = @"Software\QuanLyRapChieuPhim";
+
     public static (Color Back, Color Fore, float FontSize) LoadAppearance()
     {
         try
         {
-            using var key=Registry.CurrentUser.OpenSubKey(@"Software\QuanLyRapChieuPhim");
-            var back=Color.FromArgb(Convert.ToInt32(key?.GetValue("BackColor","-16777216") ?? "-16777216"));
-            var fore=Color.FromArgb(Convert.ToInt32(key?.GetValue("ForeColor","-1") ?? "-1"));
+            using var key=Registry.CurrentUser.OpenSubKey(RegistryPath);
+            var back=Color.FromArgb(Convert.ToInt32(key?.GetValue("BackColor",Ui.MainBack.ToArgb()) ?? Ui.MainBack.ToArgb()));
+            var fore=Color.FromArgb(Convert.ToInt32(key?.GetValue("ForeColor",Ui.MainText.ToArgb()) ?? Ui.MainText.ToArgb()));
             var size=Convert.ToSingle(key?.GetValue("FontSize","9") ?? "9");
+            if (size < 8f || size > 20f)
+                size = 9f;
             return (back,fore,size);
-        } catch { return (Color.FromArgb(35,39,47),Color.White,9f); }
+        } catch { return (Ui.MainBack,Ui.MainText,9f); }
     }
     public static void SaveAppearance(Color back, Color fore, float size)
     {
-        try { using var key=Registry.CurrentUser.CreateSubKey(@"Software\QuanLyRapChieuPhim"); key.SetValue("BackColor",back.ToArgb()); key.SetValue("ForeColor",fore.ToArgb()); key.SetValue("FontSize",size); }
+        try { using var key=Registry.CurrentUser.CreateSubKey(RegistryPath); key.SetValue("BackColor",back.ToArgb()); key.SetValue("ForeColor",fore.ToArgb()); key.SetValue("FontSize",size); }
         catch(Exception ex) { FileHelper.Log(ex); MessageBox.Show("Không lưu được Registry: "+ex.Message); }
+    }
+
+    /// <summary>Ghi nhớ tài khoản đăng nhập gần nhất. Không lưu mật khẩu.</summary>
+    public static (string User, bool Remember) LoadLoginMemory()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RegistryPath);
+            var remember = Convert.ToInt32(key?.GetValue("RememberLogin", 0) ?? 0) == 1;
+            var user = key?.GetValue("LoginUser")?.ToString() ?? "";
+            return (user, remember);
+        }
+        catch { return ("", false); }
+    }
+
+    public static void SaveLoginMemory(string user, bool remember)
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(RegistryPath);
+            key.SetValue("RememberLogin", remember ? 1 : 0);
+            key.SetValue("LoginUser", remember ? user : "");
+        }
+        catch (Exception ex)
+        {
+            FileHelper.Log(ex);
+        }
+    }
+
+    /// <summary>Khôi phục vị trí/kích thước form chính đã lưu trong Registry.</summary>
+    public static Rectangle? LoadWindowBounds()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RegistryPath);
+            if (key?.GetValue("WindowWidth") is null || key.GetValue("WindowHeight") is null)
+                return null;
+
+            var bounds = new Rectangle(
+                Convert.ToInt32(key.GetValue("WindowX", 0)),
+                Convert.ToInt32(key.GetValue("WindowY", 0)),
+                Convert.ToInt32(key.GetValue("WindowWidth")),
+                Convert.ToInt32(key.GetValue("WindowHeight")));
+
+            if (bounds.Width < 600 || bounds.Height < 400)
+                return null;
+
+            bool visible = Screen.AllScreens.Any(s => s.WorkingArea.IntersectsWith(bounds));
+            return visible ? bounds : (Rectangle?)null;
+        }
+        catch { return null; }
+    }
+
+    public static void SaveWindowBounds(Form form)
+    {
+        try
+        {
+            var bounds = form.WindowState == FormWindowState.Normal ? form.Bounds : form.RestoreBounds;
+            if (bounds.Width < 600 || bounds.Height < 400)
+                return;
+
+            using var key = Registry.CurrentUser.CreateSubKey(RegistryPath);
+            key.SetValue("WindowX", bounds.X);
+            key.SetValue("WindowY", bounds.Y);
+            key.SetValue("WindowWidth", bounds.Width);
+            key.SetValue("WindowHeight", bounds.Height);
+        }
+        catch (Exception ex)
+        {
+            FileHelper.Log(ex);
+        }
     }
 }

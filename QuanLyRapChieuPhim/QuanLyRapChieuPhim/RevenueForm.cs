@@ -10,7 +10,7 @@ namespace QuanLyRapChieuPhim;
 /// - Xuất báo cáo ra CSV/TXT bằng SaveFileDialog.
 /// - Tổng hợp cả tiền hoàn trả để ra doanh thu thực thu.
 /// </summary>
-public class RevenueForm : Form
+public partial class RevenueForm : Form
 {
     public sealed class MovieStat
     {
@@ -30,42 +30,6 @@ public class RevenueForm : Form
         public decimal Tong => TienVe + TienCombo;
     }
 
-    readonly DateTimePicker from = new()
-    {
-        Format = DateTimePickerFormat.Custom,
-        CustomFormat = "dd/MM/yyyy",
-        Width = 125
-    };
-
-    readonly DateTimePicker to = new()
-    {
-        Format = DateTimePickerFormat.Custom,
-        CustomFormat = "dd/MM/yyyy",
-        Width = 125
-    };
-
-    readonly DataGridView movieGrid = Ui.Grid();
-    readonly DataGridView dayGrid = Ui.Grid();
-    readonly TabControl tabs = new() { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9) };
-    readonly TabPage movieTab = new("Theo phim");
-    readonly TabPage dayTab = new("Theo ngày");
-
-    readonly Panel chart = new()
-    {
-        Dock = DockStyle.Fill,
-        BackColor = Color.White,
-        BorderStyle = BorderStyle.FixedSingle,
-        Margin = new Padding(6, 0, 0, 0)
-    };
-
-    readonly Label summary = new()
-    {
-        AutoSize = true,
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        ForeColor = Ui.MainText,
-        Margin = new Padding(10, 8, 10, 4)
-    };
-
     List<(string Label, decimal Value)> chartItems = new();
     List<MovieStat> movieRows = new();
     List<DayStat> dayRows = new();
@@ -78,93 +42,37 @@ public class RevenueForm : Form
 
     public RevenueForm()
     {
-        Text = "Thống kê doanh thu";
-        Width = 1000;
-        Height = 640;
-        MinimumSize = new Size(900, 560);
-        StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Ui.MainBack;
-        ForeColor = Ui.MainText;
-        Font = new Font("Segoe UI", 9);
+        InitializeComponent();
+        Ui.ApplyAppearance(this);
 
-        // ---------------- Bộ lọc và nút chức năng ----------------
-        var top = Ui.Flow();
-        top.Controls.Add(Ui.Lab("Từ ngày"));
-        top.Controls.Add(from);
-        top.Controls.Add(Ui.Lab("Đến ngày"));
-        top.Controls.Add(to);
-
-        var statButton = Ui.Btn("Thống kê");
-        statButton.Click += (_, _) => LoadReport();
-        top.Controls.Add(statButton);
-
-        var csvButton = Ui.Btn("Xuất CSV");
-        csvButton.BackColor = Color.FromArgb(30, 130, 80);
-        csvButton.Click += (_, _) => ExportCsv();
-        top.Controls.Add(csvButton);
-
-        var txtButton = Ui.Btn("Xuất báo cáo TXT");
-        txtButton.BackColor = Color.FromArgb(90, 100, 115);
-        txtButton.Click += (_, _) => ExportTxt();
-        top.Controls.Add(txtButton);
-
-        // ---------------- Hai bảng số liệu ----------------
-        movieTab.BackColor = Ui.MainBack;
-        movieTab.Padding = new Padding(4);
-        dayTab.BackColor = Ui.MainBack;
-        dayTab.Padding = new Padding(4);
-        movieTab.Controls.Add(movieGrid);
-        dayTab.Controls.Add(dayGrid);
-        tabs.TabPages.Add(movieTab);
-        tabs.TabPages.Add(dayTab);
-        tabs.SelectedIndexChanged += (_, _) => UpdateChart();
-
-        var body = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 1,
-            Padding = new Padding(8),
-            BackColor = Ui.MainBack
-        };
-        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 66f));
-        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34f));
-        body.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        body.Controls.Add(tabs, 0, 0);
-        body.Controls.Add(chart, 1, 0);
-
-        var bottom = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            AutoSize = true,
-            WrapContents = true,
-            BackColor = Ui.MainBack
-        };
-        bottom.Controls.Add(summary);
-
-        Controls.Add(body);
-        Controls.Add(bottom);
-        Controls.Add(top);
-
-        // ---------------- Menu chuột phải trên bảng ----------------
-        var context = new ContextMenuStrip();
-        context.Items.Add("Xuất CSV", null, (_, _) => ExportCsv());
-        context.Items.Add("Xuất báo cáo TXT", null, (_, _) => ExportTxt());
-        context.Items.Add(new ToolStripSeparator());
-        context.Items.Add("Làm mới", null, (_, _) => LoadReport());
-        movieGrid.ContextMenuStrip = context;
-        dayGrid.ContextMenuStrip = context;
-
-        chart.Paint += DrawChart;
-        chart.Resize += (_, _) => chart.Invalidate();
+        if (Ui.DesignTime)
+            return;
 
         from.Value = DateTime.Today.AddDays(-30);
         to.Value = DateTime.Today;
 
         LoadReport();
-
-        Shown += (_, _) => UpdateChart();
     }
+
+    void statButton_Click(object? sender, EventArgs e) => LoadReport();
+
+    void csvButton_Click(object? sender, EventArgs e) => ExportCsv();
+
+    void txtButton_Click(object? sender, EventArgs e) => ExportTxt();
+
+    void tabs_SelectedIndexChanged(object? sender, EventArgs e) => UpdateChart();
+
+    void chart_Paint(object? sender, PaintEventArgs e) => DrawChart(e);
+
+    void chart_Resize(object? sender, EventArgs e) => chart.Invalidate();
+
+    void contextCsv_Click(object? sender, EventArgs e) => ExportCsv();
+
+    void contextTxt_Click(object? sender, EventArgs e) => ExportTxt();
+
+    void contextRefresh_Click(object? sender, EventArgs e) => LoadReport();
+
+    void RevenueForm_Shown(object? sender, EventArgs e) => UpdateChart();
 
     void LoadReport()
     {
@@ -290,7 +198,7 @@ public class RevenueForm : Form
         chart.Invalidate();
     }
 
-    void DrawChart(object? sender, PaintEventArgs e)
+    void DrawChart(PaintEventArgs e)
     {
         var g = e.Graphics;
         g.Clear(Color.White);

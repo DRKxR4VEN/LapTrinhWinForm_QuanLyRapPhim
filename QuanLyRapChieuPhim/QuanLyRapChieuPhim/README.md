@@ -14,6 +14,18 @@
    - Nhân viên: `nhanvien` / `123` – chỉ **Bán vé** và **Đổi giao diện**.
 5. Dữ liệu mẫu được copy vào thư mục `Data` cạnh file chạy; nếu thiếu, chương trình tự tạo thư mục/tập tin khi khởi động.
 
+## Cấu trúc mã nguồn (Visual Studio Designer)
+Mỗi Form là một `partial class` tách thành hai tập tin:
+- `<TenForm>.cs` – xử lý nghiệp vụ và sự kiện.
+- `<TenForm>.Designer.cs` – `InitializeComponent()`, khai báo và khởi tạo control.
+
+Các form: `LoginForm`, `MainForm`, `MovieForm`, `RoomForm`, `ScreeningForm`, `TicketForm`,
+`RevenueForm`, `SettingsForm`.
+
+Mở chế độ Designer: trong Solution Explorer, bấm đúp (hoặc chuột phải → **View Designer**)
+lên tập tin `.cs` của form. Sơ đồ ghế (SV3) và biểu đồ doanh thu được vẽ động trong code
+nên Designer chỉ hiển thị khung chứa tương ứng.
+
 ## Phân quyền
 - **Quản trị:** sao lưu/khôi phục, quản lý phim, phòng chiếu, suất chiếu, bán vé, xem doanh thu, đổi giao diện.
 - **Nhân viên:** bán vé và đổi giao diện; không thấy các mục quản lý phim, phòng chiếu, suất chiếu, doanh thu, sao lưu/khôi phục.

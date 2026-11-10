@@ -1,78 +1,31 @@
 namespace QuanLyRapChieuPhim;
 
-public class LoginForm : Form
+public partial class LoginForm : Form
 {
-    readonly TextBox user = new()
-    {
-        Width = 180
-    };
-
-    readonly TextBox pass = new()
-    {
-        Width = 180,
-        PasswordChar = '●'
-    };
-
     readonly Dictionary<string, int> fails = new();
 
     public AppUser? CurrentUser { get; private set; }
 
     public LoginForm()
     {
-        Text = "Đăng nhập - Quản lý rạp chiếu phim";
-        Width = 400;
-        Height = 250;
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
+        InitializeComponent();
+        Ui.ApplyAppearance(this);
 
-        BackColor = Ui.MainBack;
-        ForeColor = Ui.MainText;
-        Font = new Font("Segoe UI", 10);
+        var memory = AppData.LoadLoginMemory();
+        remember.Checked = memory.Remember;
 
-        var panel = new TableLayoutPanel
+        if (memory.Remember && !string.IsNullOrWhiteSpace(memory.User))
         {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(18),
-            ColumnCount = 2,
-            RowCount = 3,
-            BackColor = Ui.MainBack
-        };
-
-        panel.ColumnStyles.Add(
-            new ColumnStyle(SizeType.Percent, 35));
-
-        panel.ColumnStyles.Add(
-            new ColumnStyle(SizeType.Percent, 65));
-
-        panel.Controls.Add(Ui.Lab("Tài khoản"), 0, 0);
-        panel.Controls.Add(user, 1, 0);
-
-        panel.Controls.Add(Ui.Lab("Mật khẩu"), 0, 1);
-        panel.Controls.Add(pass, 1, 1);
-
-        var login = Ui.Btn("Đăng nhập");
-        login.Click += (_, _) => DoLogin();
-
-        panel.Controls.Add(login, 1, 2);
-
-        Controls.Add(panel);
-
-        var hint = new Label
+            user.Text = memory.User;
+            pass.Focus();
+        }
+        else
         {
-            BackColor = Ui.MainBack,
-            ForeColor = Ui.MainText,
-            Font = new Font("Segoe UI", 9),
-            Text = "Mặc định: admin/123 hoặc nhanvien/123",
-            Dock = DockStyle.Bottom,
-            Height = 30,
-            TextAlign = ContentAlignment.MiddleCenter
-        };
-
-        Controls.Add(hint);
-
-        AcceptButton = login;
+            user.Focus();
+        }
     }
+
+    void loginButton_Click(object? sender, EventArgs e) => DoLogin();
 
     void DoLogin()
     {
@@ -115,6 +68,7 @@ public class LoginForm : Form
             return;
         }
 
+        AppData.SaveLoginMemory(name, remember.Checked);
         CurrentUser = found;
         DialogResult = DialogResult.OK;
         Close();

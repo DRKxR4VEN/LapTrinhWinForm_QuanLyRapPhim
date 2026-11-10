@@ -11,110 +11,12 @@ namespace QuanLyRapChieuPhim;
 /// - Trả vé trước giờ chiếu 1 tiếng (nâng cao).
 /// - In vé ra tập tin TXT.
 /// </summary>
-public class TicketForm : Form
+public partial class TicketForm : Form
 {
     static readonly Color SeatFree = Color.LightGreen;
     static readonly Color SeatVip = Color.Gold;
     static readonly Color SeatSelected = Color.DeepSkyBlue;
     static readonly Color SeatSold = Color.IndianRed;
-
-    readonly ComboBox screening = new()
-    {
-        DropDownStyle = ComboBoxStyle.DropDownList,
-        Width = 430
-    };
-
-    readonly ComboBox snack = new()
-    {
-        DropDownStyle = ComboBoxStyle.DropDownList,
-        Width = 235
-    };
-
-    readonly RadioButton adult = new()
-    {
-        Text = "Người lớn",
-        AutoSize = true,
-        Checked = true,
-        BackColor = Ui.MainBack,
-        ForeColor = Ui.MainText,
-        Margin = new Padding(2, 9, 14, 0)
-    };
-
-    readonly RadioButton student = new()
-    {
-        Text = "Học sinh - Sinh viên",
-        AutoSize = true,
-        BackColor = Ui.MainBack,
-        ForeColor = Ui.MainText,
-        Margin = new Padding(2, 9, 0, 0)
-    };
-
-    readonly Panel seatHost = new()
-    {
-        Dock = DockStyle.Fill,
-        AutoScroll = true,
-        BackColor = Color.White,
-        Padding = new Padding(10)
-    };
-
-    readonly FlowLayoutPanel seats = new()
-    {
-        Location = new Point(0, 0),
-        FlowDirection = FlowDirection.TopDown,
-        WrapContents = false,
-        AutoSize = true,
-        AutoSizeMode = AutoSizeMode.GrowAndShrink,
-        BackColor = Color.White
-    };
-
-    readonly Label legend = new()
-    {
-        AutoSize = true,
-        TextAlign = ContentAlignment.MiddleLeft,
-        ForeColor = Ui.MainText,
-        Margin = new Padding(8, 10, 0, 0)
-    };
-
-    readonly Label status = new()
-    {
-        AutoSize = true,
-        ForeColor = Ui.MainText,
-        Margin = new Padding(10, 10, 18, 0)
-    };
-
-    readonly Label cart = new()
-    {
-        AutoSize = true,
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        ForeColor = Ui.Accent,
-        Margin = new Padding(4, 7, 10, 0)
-    };
-
-    readonly ListView soldList = new()
-    {
-        Dock = DockStyle.Fill,
-        View = View.Details,
-        FullRowSelect = true,
-        MultiSelect = false,
-        HideSelection = false,
-        ShowItemToolTips = true,
-        BackColor = Color.White,
-        ForeColor = Ui.MainText,
-        BorderStyle = BorderStyle.FixedSingle
-    };
-
-    readonly Label soldInfo = new()
-    {
-        Dock = DockStyle.Bottom,
-        Height = 56,
-        ForeColor = Color.FromArgb(90, 100, 115),
-        Padding = new Padding(2, 4, 2, 4)
-    };
-
-    readonly Button refundButton;
-    readonly Button printButton;
-
-    readonly System.Windows.Forms.Timer refreshTimer = new() { Interval = 20000 };
 
     readonly HashSet<string> selected = new();
 
@@ -126,114 +28,12 @@ public class TicketForm : Form
 
     public TicketForm()
     {
-        Text = "Bán vé";
-        Width = 1150;
-        Height = 680;
-        MinimumSize = new Size(1050, 600);
-        StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Ui.MainBack;
-        ForeColor = Ui.MainText;
-        Font = new Font("Segoe UI", 9);
+        InitializeComponent();
+        Ui.ApplyAppearance(this);
 
-        // ---------------- Thanh công cụ phía trên ----------------
-        var top = Ui.Flow();
+        if (Ui.DesignTime)
+            return;
 
-        top.Controls.Add(Ui.Lab("Suất chiếu"));
-        top.Controls.Add(screening);
-
-        var typePanel = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            WrapContents = false,
-            BackColor = Ui.MainBack,
-            Margin = new Padding(8, 0, 8, 0)
-        };
-        typePanel.Controls.Add(new Label
-        {
-            Text = "Loại vé",
-            AutoSize = true,
-            ForeColor = Ui.MainText,
-            Margin = new Padding(0, 10, 4, 0)
-        });
-        typePanel.Controls.Add(adult);
-        typePanel.Controls.Add(student);
-        top.Controls.Add(typePanel);
-
-        top.Controls.Add(Ui.Lab("Bắp nước"));
-        top.Controls.Add(snack);
-
-        var sell = Ui.Btn("Bán vé đã chọn");
-        sell.Click += (_, _) => Sell();
-        top.Controls.Add(sell);
-
-        // ---------------- Danh sách vé đã bán + trả vé ----------------
-        var right = new Panel
-        {
-            Dock = DockStyle.Right,
-            Width = 340,
-            BackColor = Ui.MainBack,
-            Padding = new Padding(8)
-        };
-
-        var soldTitle = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 28,
-            Text = "VÉ ĐÃ BÁN",
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Ui.MainText
-        };
-
-        refundButton = Ui.Btn("Trả vé đã chọn");
-        refundButton.BackColor = Color.Firebrick;
-        refundButton.Enabled = false;
-        refundButton.Click += (_, _) => Refund();
-
-        printButton = Ui.Btn("In lại vé");
-        printButton.BackColor = Color.FromArgb(90, 100, 115);
-        printButton.Click += (_, _) => PrintSelectedTicket();
-
-        var actions = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 84,
-            WrapContents = true,
-            BackColor = Ui.MainBack
-        };
-        actions.Controls.Add(refundButton);
-        actions.Controls.Add(printButton);
-
-        soldList.Columns.Add("Ghế", 42);
-        soldList.Columns.Add("Loại vé", 92);
-        soldList.Columns.Add("Tổng", 80);
-        soldList.Columns.Add("Bán lúc", 86);
-
-        right.Controls.Add(soldList);
-        right.Controls.Add(soldInfo);
-        right.Controls.Add(actions);
-        right.Controls.Add(soldTitle);
-
-        // ---------------- Thanh trạng thái dưới ----------------
-        var bottom = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            AutoSize = true,
-            WrapContents = true,
-            BackColor = Ui.MainBack
-        };
-        bottom.Controls.Add(status);
-        bottom.Controls.Add(cart);
-        bottom.Controls.Add(legend);
-
-        seatHost.Controls.Add(seats);
-
-        Controls.Add(seatHost);
-        Controls.Add(right);
-        Controls.Add(bottom);
-        Controls.Add(top);
-
-        // ---------------- Combo bắp nước ----------------
         var snackOptions = new List<SnackCombo>
         {
             new() { Name = "Không dùng bắp nước", Price = 0 }
@@ -242,31 +42,44 @@ public class TicketForm : Form
         snack.DisplayMember = nameof(SnackCombo.Display);
         snack.DataSource = snackOptions;
 
-        // ---------------- Sự kiện ----------------
-        screening.SelectedIndexChanged += (_, _) =>
-        {
-            if (!binding)
-                BuildSeats();
-        };
-        adult.CheckedChanged += (_, _) => UpdateCart();
-        student.CheckedChanged += (_, _) => UpdateCart();
-        snack.SelectedIndexChanged += (_, _) => UpdateCart();
-        soldList.SelectedIndexChanged += (_, _) =>
-            refundButton.Enabled = soldList.SelectedItems.Count > 0
-                && soldList.SelectedItems[0].Tag is Ticket;
-        soldList.DoubleClick += (_, _) => PrintSelectedTicket();
-
-        refreshTimer.Tick += (_, _) =>
-        {
-            // Không vẽ lại sơ đồ ghế khi hộp thoại xác nhận bán vé đang mở.
-            if (!selling)
-                RefreshScreenings();
-        };
         refreshTimer.Start();
-        FormClosed += (_, _) => refreshTimer.Stop();
-
         RefreshScreenings();
     }
+
+    void screening_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (!binding)
+            BuildSeats();
+    }
+
+    void adult_CheckedChanged(object? sender, EventArgs e) => UpdateCart();
+
+    void student_CheckedChanged(object? sender, EventArgs e) => UpdateCart();
+
+    void snack_SelectedIndexChanged(object? sender, EventArgs e) => UpdateCart();
+
+    void soldList_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        refundButton.Enabled = soldList.SelectedItems.Count > 0
+            && soldList.SelectedItems[0].Tag is Ticket;
+    }
+
+    void soldList_DoubleClick(object? sender, EventArgs e) => PrintSelectedTicket();
+
+    void sellButton_Click(object? sender, EventArgs e) => Sell();
+
+    void refundButton_Click(object? sender, EventArgs e) => Refund();
+
+    void printButton_Click(object? sender, EventArgs e) => PrintSelectedTicket();
+
+    void refreshTimer_Tick(object? sender, EventArgs e)
+    {
+        // Không vẽ lại sơ đồ ghế khi hộp thoại xác nhận bán vé đang mở.
+        if (!selling)
+            RefreshScreenings();
+    }
+
+    void TicketForm_FormClosed(object? sender, FormClosedEventArgs e) => refreshTimer.Stop();
 
     /// <summary>
     /// Nạp danh sách suất chiếu chưa bắt đầu. Timer gọi lại hàm này mỗi 20 giây
@@ -391,7 +204,7 @@ public class TicketForm : Form
                 var name = $"{rowLetter}{c}";
                 bool isSold = sold.Contains(name);
 
-                var b = new Button
+                var button = new Button
                 {
                     Text = name,
                     Width = 54,
@@ -403,9 +216,8 @@ public class TicketForm : Form
                     BackColor = isSold ? SeatSold : vipRow ? SeatVip : SeatFree
                 };
 
-                b.Click += (_, _) => Toggle(name, b);
-
-                rowPanel.Controls.Add(b);
+                button.Click += (_, _) => Toggle(name, button);
+                rowPanel.Controls.Add(button);
             }
 
             seats.Controls.Add(rowPanel);
@@ -420,16 +232,16 @@ public class TicketForm : Form
         UpdateCart();
     }
 
-    void Toggle(string name, Button b)
+    void Toggle(string seat, Button button)
     {
-        if (!selected.Add(name))
+        if (!selected.Add(seat))
         {
-            selected.Remove(name);
-            b.BackColor = IsVipSeat(name) ? SeatVip : SeatFree;
+            selected.Remove(seat);
+            button.BackColor = IsVipSeat(seat) ? SeatVip : SeatFree;
         }
         else
         {
-            b.BackColor = SeatSelected;
+            button.BackColor = SeatSelected;
         }
 
         if (selected.Count == 0)
@@ -491,24 +303,24 @@ public class TicketForm : Form
         if (currentScreening == null)
             return;
 
-        foreach (var t in AppData.Tickets
+        foreach (var ticket in AppData.Tickets
                      .Where(x => x.ScreeningId == currentScreening.Id)
                      .OrderBy(x => x.Seat))
         {
             var item = new ListViewItem(new[]
             {
-                t.Seat,
-                t.CustomerType,
-                Ui.Money(t.Total),
-                t.SoldAt.ToString("HH:mm dd/MM")
+                ticket.Seat,
+                ticket.CustomerType,
+                Ui.Money(ticket.Total),
+                ticket.SoldAt.ToString("HH:mm dd/MM")
             })
             {
-                Tag = t,
+                Tag = ticket,
                 ToolTipText =
-                    $"Mã vé: {t.Id}\n" +
-                    $"Giá vé: {Ui.Money(t.Price)}\n" +
-                    $"Bắp nước: {(string.IsNullOrWhiteSpace(t.ComboName) ? "Không" : t.ComboName)}\n" +
-                    $"Phụ thu combo: {Ui.Money(t.ComboPrice)}"
+                    $"Mã vé: {ticket.Id}\n" +
+                    $"Giá vé: {Ui.Money(ticket.Price)}\n" +
+                    $"Bắp nước: {(string.IsNullOrWhiteSpace(ticket.ComboName) ? "Không" : ticket.ComboName)}\n" +
+                    $"Phụ thu combo: {Ui.Money(ticket.ComboPrice)}"
             };
 
             soldList.Items.Add(item);
@@ -542,7 +354,10 @@ public class TicketForm : Form
         try
         {
             if (currentScreening == null || currentRoom == null)
+            {
+                screening.Focus();
                 throw new Exception("Vui lòng chọn suất chiếu.");
+            }
 
             if (currentScreening.StartTime <= DateTime.Now)
             {
@@ -623,9 +438,9 @@ public class TicketForm : Form
             AppData.SaveTickets();
 
             int failed = 0;
-            foreach (var t in created)
+            foreach (var ticket in created)
             {
-                if (!SaveTicketFile(t, Path.Combine(FileHelper.DataDir, $"Ve_{t.Id}.txt")))
+                if (!SaveTicketFile(ticket, Path.Combine(FileHelper.DataDir, $"Ve_{ticket.Id}.txt")))
                     failed++;
             }
 
@@ -652,12 +467,13 @@ public class TicketForm : Form
         try
         {
             if (soldList.SelectedItems.Count == 0
-                || soldList.SelectedItems[0].Tag is not Ticket t)
+                || soldList.SelectedItems[0].Tag is not Ticket ticket)
             {
+                soldList.Focus();
                 throw new Exception("Vui lòng chọn vé cần trả trong danh sách vé đã bán.");
             }
 
-            var remaining = t.ShowTime - DateTime.Now;
+            var remaining = ticket.ShowTime - DateTime.Now;
             var allowedBefore = TimeSpan.FromHours(AppConfig.RefundBeforeHours);
 
             if (remaining < allowedBefore)
@@ -673,12 +489,12 @@ public class TicketForm : Form
 
             var confirm = MessageBox.Show(
                 "Xác nhận trả vé?\n\n" +
-                $"Mã vé: {t.Id}\n" +
-                $"Phim: {t.MovieTitle}\n" +
-                $"Ghế: {t.Seat}\n" +
-                $"Loại vé: {t.CustomerType}\n" +
-                $"Bắp nước: {(string.IsNullOrWhiteSpace(t.ComboName) ? "Không" : t.ComboName)}\n" +
-                $"Số tiền hoàn: {Ui.Money(t.Total)}",
+                $"Mã vé: {ticket.Id}\n" +
+                $"Phim: {ticket.MovieTitle}\n" +
+                $"Ghế: {ticket.Seat}\n" +
+                $"Loại vé: {ticket.CustomerType}\n" +
+                $"Bắp nước: {(string.IsNullOrWhiteSpace(ticket.ComboName) ? "Không" : ticket.ComboName)}\n" +
+                $"Số tiền hoàn: {Ui.Money(ticket.Total)}",
                 "Xác nhận trả vé",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning,
@@ -687,20 +503,20 @@ public class TicketForm : Form
             if (confirm != DialogResult.Yes)
                 return;
 
-            if (!AppData.Tickets.Remove(t))
+            if (!AppData.Tickets.Remove(ticket))
                 throw new Exception("Không tìm thấy vé cần trả, dữ liệu có thể đã thay đổi.");
 
             var refund = new Refund
             {
-                TicketId = t.Id,
-                ScreeningId = t.ScreeningId,
-                MovieTitle = t.MovieTitle,
-                RoomName = t.RoomName,
-                Seat = t.Seat,
-                CustomerType = t.CustomerType,
-                ComboName = t.ComboName,
-                Amount = t.Total,
-                ShowTime = t.ShowTime,
+                TicketId = ticket.Id,
+                ScreeningId = ticket.ScreeningId,
+                MovieTitle = ticket.MovieTitle,
+                RoomName = ticket.RoomName,
+                Seat = ticket.Seat,
+                CustomerType = ticket.CustomerType,
+                ComboName = ticket.ComboName,
+                Amount = ticket.Total,
+                ShowTime = ticket.ShowTime,
                 RefundedAt = DateTime.Now
             };
 
@@ -708,11 +524,11 @@ public class TicketForm : Form
             AppData.SaveTickets();
             AppData.SaveRefunds();
             FileHelper.Log(
-                $"Trả vé {t.Id} - suất {t.ScreeningId} - ghế {t.Seat} - " +
-                $"hoàn {t.Total:0} đ - lý do: khách trả trước giờ chiếu.");
+                $"Trả vé {ticket.Id} - suất {ticket.ScreeningId} - ghế {ticket.Seat} - " +
+                $"hoàn {ticket.Total:0} đ - lý do: khách trả trước giờ chiếu.");
 
             MessageBox.Show(
-                $"Đã trả vé {t.Id}.\nHoàn tiền: {Ui.Money(t.Total)}",
+                $"Đã trả vé {ticket.Id}.\nHoàn tiền: {Ui.Money(ticket.Total)}",
                 "Thông báo",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
@@ -730,7 +546,7 @@ public class TicketForm : Form
         try
         {
             if (soldList.SelectedItems.Count == 0
-                || soldList.SelectedItems[0].Tag is not Ticket t)
+                || soldList.SelectedItems[0].Tag is not Ticket ticket)
             {
                 MessageBox.Show(
                     "Vui lòng chọn vé cần in trong danh sách vé đã bán.",
@@ -744,14 +560,14 @@ public class TicketForm : Form
             {
                 Title = "Lưu vé xem phim",
                 Filter = "Tập tin văn bản|*.txt",
-                FileName = $"Ve_{t.Id}.txt",
+                FileName = $"Ve_{ticket.Id}.txt",
                 InitialDirectory = FileHelper.DataDir
             };
 
             if (dialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            if (SaveTicketFile(t, dialog.FileName))
+            if (SaveTicketFile(ticket, dialog.FileName))
             {
                 MessageBox.Show(
                     "Đã in vé ra tập tin:\n" + dialog.FileName,
@@ -774,12 +590,12 @@ public class TicketForm : Form
         }
     }
 
-    static bool SaveTicketFile(Ticket t, string path)
+    static bool SaveTicketFile(Ticket ticket, string path)
     {
         try
         {
             FileHelper.EnsureDataDir();
-            File.WriteAllText(path, BuildTicketText(t), new UTF8Encoding(true));
+            File.WriteAllText(path, BuildTicketText(ticket), new UTF8Encoding(true));
             return true;
         }
         catch (Exception ex)
@@ -789,23 +605,23 @@ public class TicketForm : Form
         }
     }
 
-    static string BuildTicketText(Ticket t) =>
+    static string BuildTicketText(Ticket ticket) =>
         $"{AppConfig.CinemaName}\r\n" +
         "====================================\r\n" +
         "           VÉ XEM PHIM\r\n" +
         "====================================\r\n" +
-        $"Mã vé     : {t.Id}\r\n" +
-        $"Phim      : {t.MovieTitle}\r\n" +
-        $"Phòng     : {t.RoomName}\r\n" +
-        $"Suất chiếu: {t.ShowTime:HH:mm dd/MM/yyyy}\r\n" +
-        $"Ghế       : {t.Seat}{(t.IsVip ? " (VIP)" : "")}\r\n" +
-        $"Loại vé   : {t.CustomerType}\r\n" +
-        $"Bắp nước  : {(string.IsNullOrWhiteSpace(t.ComboName) ? "Không" : t.ComboName)}\r\n" +
+        $"Mã vé     : {ticket.Id}\r\n" +
+        $"Phim      : {ticket.MovieTitle}\r\n" +
+        $"Phòng     : {ticket.RoomName}\r\n" +
+        $"Suất chiếu: {ticket.ShowTime:HH:mm dd/MM/yyyy}\r\n" +
+        $"Ghế       : {ticket.Seat}{(ticket.IsVip ? " (VIP)" : "")}\r\n" +
+        $"Loại vé   : {ticket.CustomerType}\r\n" +
+        $"Bắp nước  : {(string.IsNullOrWhiteSpace(ticket.ComboName) ? "Không" : ticket.ComboName)}\r\n" +
         "------------------------------------\r\n" +
-        $"Giá vé    : {Ui.Money(t.Price)}\r\n" +
-        $"Phụ thu   : {Ui.Money(t.ComboPrice)}\r\n" +
-        $"Tổng cộng : {Ui.Money(t.Total)}\r\n" +
-        $"Ngày bán  : {t.SoldAt:HH:mm dd/MM/yyyy}\r\n" +
+        $"Giá vé    : {Ui.Money(ticket.Price)}\r\n" +
+        $"Phụ thu   : {Ui.Money(ticket.ComboPrice)}\r\n" +
+        $"Tổng cộng : {Ui.Money(ticket.Total)}\r\n" +
+        $"Ngày bán  : {ticket.SoldAt:HH:mm dd/MM/yyyy}\r\n" +
         "====================================\r\n" +
         "Vui lòng giữ vé để soát khi vào phòng.\r\n";
 }
