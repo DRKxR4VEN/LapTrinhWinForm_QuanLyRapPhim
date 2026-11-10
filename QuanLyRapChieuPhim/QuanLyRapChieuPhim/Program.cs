@@ -1,4 +1,4 @@
-namespace QuanLyRapChieuPhim;
+﻿namespace QuanLyRapChieuPhim;
 
 internal static class Program
 {
@@ -6,9 +6,9 @@ internal static class Program
     static void Main()
     {
         ApplicationConfiguration.Initialize();
-        AppData.Initialize();
-        using var login = new LoginForm();
-        if (login.ShowDialog() == DialogResult.OK)
-            Application.Run(new MainForm(login.CurrentUser!));
+        DuLieu.KhoiTao();
+        using var dangNhap = new FormDangNhap();
+        if (dangNhap.ShowDialog() == DialogResult.OK)
+            Application.Run(new FormChinh(dangNhap.NguoiDungHienTai!));
     }
 }
