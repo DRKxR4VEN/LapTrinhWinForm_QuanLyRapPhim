@@ -14,29 +14,13 @@
    - Nhân viên: `nhanvien` / `123` – chỉ **Bán vé** và **Đổi giao diện**.
 5. Dữ liệu mẫu được copy vào thư mục `Data` cạnh file chạy; nếu thiếu, chương trình tự tạo thư mục/tập tin khi khởi động.
 
-Có thể build bằng dòng lệnh: `dotnet build QuanLyRapChieuPhim.csproj`.
-
-## Bài nộp
-- Mã nguồn: thư mục này (không kèm `bin`, `obj`, `.vs`), mở `QuanLyRapChieuPhim.sln` hoặc `.csproj`.
-- Dữ liệu mẫu: thư mục `Data` (6 phim, 4 phòng, 33 suất, 53 vé, 3 biên bản trả vé).
-- Báo cáo Word: `BaoCao/BaoCaoCuoiKy.docx` (sơ đồ chức năng, sơ đồ lớp, mô tả tập tin dữ liệu, ảnh giao diện, 33 test case, phân công).
-- Slide thuyết trình: `BaoCao/SlideThuyetTrinh.pptx` (14 trang, 10–15 phút kèm luồng demo).
-- Hình ảnh và sơ đồ dùng trong báo cáo: `BaoCao/HinhAnh`.
-- Tệp mẫu nhập phim: `Phim.csv` (đặt cùng thư mục chạy khi thử chức năng nhập CSV).
-
 ## Cấu trúc mã nguồn (Visual Studio Designer)
 Mỗi Form là một `partial class` tách thành hai tập tin:
 - `<TenForm>.cs` – xử lý nghiệp vụ và sự kiện.
 - `<TenForm>.Designer.cs` – `InitializeComponent()`, khai báo và khởi tạo control.
 
-Các form: `FormDangNhap`, `FormChinh`, `FormPhim`, `FormPhongChieu`, `FormSuatChieu`,
-`FormBanVe`, `FormDoanhThu`, `FormCauHinh`.
-
-Các tập tin dùng chung:
-- `Program.cs` – điểm vào, khởi tạo dữ liệu và mở form đăng nhập.
-- `MoHinh.cs` – các lớp dữ liệu (`Phim`, `PhongChieu`, `SuatChieu`, `Ve`, `PhieuTraVe`, ...).
-- `DuLieu.cs` – đọc/ghi tập tin `Data/*.txt`, cấu hình `App.config`, Registry, kiểm tra trùng lịch.
-- `GiaoDien.cs` – màu sắc, cỡ chữ, định dạng tiền, áp dụng giao diện.
+Các form: `LoginForm`, `MainForm`, `MovieForm`, `RoomForm`, `ScreeningForm`, `TicketForm`,
+`RevenueForm`, `SettingsForm`.
 
 Mở chế độ Designer: trong Solution Explorer, bấm đúp (hoặc chuột phải → **View Designer**)
 lên tập tin `.cs` của form. Sơ đồ ghế (SV3) và biểu đồ doanh thu được vẽ động trong code
