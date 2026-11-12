@@ -180,25 +180,74 @@ public partial class MainForm : Form
 
     void cascadeItem_Click(object? sender, EventArgs e) => ArrangeWindows(MdiLayout.Cascade);
 
-    // "Sắp xếp ngang" xếp các cửa sổ cạnh nhau theo hàng ngang (TileVertical),
-    // "Sắp xếp dọc" xếp chồng lên nhau theo cột dọc (TileHorizontal).
-    void tileHorizontalItem_Click(object? sender, EventArgs e) => ArrangeWindows(MdiLayout.TileVertical);
+    // LayoutMdi khi có 4 cửa sổ đều xếp thành lưới 2×2 dù chọn ngang hay dọc nên nhìn
+    // giống hệt nhau. Vì vậy hai mục này tự chia vùng làm việc và đặt Bounds cho từng
+    // cửa sổ: "Sắp xếp ngang" đặt các cửa sổ cạnh nhau, "Sắp xếp dọc" chồng lên nhau.
+    void tileHorizontalItem_Click(object? sender, EventArgs e) => ArrangeWindows(sideBySide: true);
 
-    void tileVerticalItem_Click(object? sender, EventArgs e) => ArrangeWindows(MdiLayout.TileHorizontal);
+    void tileVerticalItem_Click(object? sender, EventArgs e) => ArrangeWindows(sideBySide: false);
 
     void arrangeIconsItem_Click(object? sender, EventArgs e) => LayoutMdi(MdiLayout.ArrangeIcons);
 
     readonly Dictionary<Form, Size> designMinimums = new();
 
     /// <summary>
-    /// Sắp xếp các form con trong vùng MDI. MinimumSize của từng form được tạm hạ xuống
-    /// theo kích thước ô chia để LayoutMdi không đẩy cửa sổ tràn ra ngoài vùng làm việc.
+    /// Hạ tạm MinimumSize của các form con để xếp vừa vào vùng làm việc,
+    /// sắp xếp rồi khôi phục MinimumSize theo kích thước cửa sổ sau khi xếp.
     /// </summary>
     void ArrangeWindows(MdiLayout layout)
     {
-        var children = MdiChildren;
+        var children = PrepareChildren();
         if (children.Length == 0)
             return;
+
+        LayoutMdi(layout);
+        RestoreMinimums(children);
+    }
+
+    /// <summary>
+    /// Chia vùng MDI thành các dải: sideBySide = true thì các dải dọc nằm cạnh nhau,
+    /// ngược lại các dải ngang chồng lên nhau.
+    /// </summary>
+    void ArrangeWindows(bool sideBySide)
+    {
+        var children = PrepareChildren();
+        if (children.Length == 0)
+            return;
+
+        var area = ClientRectangle;
+        int count = children.Length;
+
+        for (int i = 0; i < count; i++)
+        {
+            var child = children[i];
+
+            if (sideBySide)
+            {
+                int width = area.Width / count;
+                child.SetBounds(
+                    area.X + i * width,
+                    area.Y,
+                    i == count - 1 ? area.Width - i * width : width,
+                    area.Height);
+            }
+            else
+            {
+                int height = area.Height / count;
+                child.SetBounds(
+                    area.X,
+                    area.Y + i * height,
+                    area.Width,
+                    i == count - 1 ? area.Height - i * height : height);
+            }
+        }
+
+        RestoreMinimums(children);
+    }
+
+    Form[] PrepareChildren()
+    {
+        var children = MdiChildren;
 
         foreach (var child in children)
         {
@@ -206,10 +255,15 @@ public partial class MainForm : Form
                 designMinimums[child] = child.MinimumSize;
 
             child.MinimumSize = Size.Empty;
+            if (child.WindowState != FormWindowState.Normal)
+                child.WindowState = FormWindowState.Normal;
         }
 
-        LayoutMdi(layout);
+        return children;
+    }
 
+    void RestoreMinimums(Form[] children)
+    {
         foreach (var child in children)
         {
             if (!designMinimums.TryGetValue(child, out var design) || child.WindowState != FormWindowState.Normal)

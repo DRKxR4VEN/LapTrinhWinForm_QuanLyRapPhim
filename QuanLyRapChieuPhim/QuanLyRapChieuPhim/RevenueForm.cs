@@ -95,6 +95,8 @@ public partial class RevenueForm : Form
             .OrderBy(r => r.RefundedAt)
             .ToList();
 
+        // Vấn đáp: GroupBy nhóm vé theo tên phim / theo ngày bán rồi Sum tiền;
+        // vé đã trả bị xóa khỏi danh sách nên không vào thống kê, tiền hoàn trừ riêng ở dòng thực thu.
         movieRows = tickets
             .GroupBy(t => t.MovieTitle)
             .Select(g => new MovieStat
@@ -250,6 +252,7 @@ public partial class RevenueForm : Form
                 Ui.MainText,
                 TextFormatFlags.EndEllipsis | TextFormatFlags.VerticalCenter);
 
+            // Vấn đáp: tự vẽ biểu đồ GDI+ trong sự kiện Paint; cột dài = value/max × chiều ngang tối đa; đổi dữ liệu chỉ cần gọi Invalidate().
             int width = (int)Math.Round(barMax * (double)(value / max));
             g.FillRectangle(
                 i % 2 == 0 ? barBrush : altBrush,
@@ -281,6 +284,7 @@ public partial class RevenueForm : Form
 
         try
         {
+            // Vấn đáp: CSV dùng dấu ';' vì Excel tiếng Việt tách cột bằng dấu chấm phẩy; số tiền ghi theo InvariantCulture để không lẫn dấu phẩy thập phân.
             var sb = new StringBuilder();
             sb.AppendLine("BÁO CÁO DOANH THU");
             sb.AppendLine($"Từ ngày;{from.Value:dd/MM/yyyy}");

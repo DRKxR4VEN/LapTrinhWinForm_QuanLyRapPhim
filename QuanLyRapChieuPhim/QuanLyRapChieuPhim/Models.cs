@@ -86,6 +86,7 @@ public class Ticket
     public DateTime SoldAt { get; set; } = DateTime.Now;
     public string ComboName { get; set; } = "";
     public decimal ComboPrice { get; set; }
+    /// <summary>Tổng tiền = tiền vé + combo, tính sẵn để bán vé và thống kê dùng nhanh.</summary>
     public decimal Total => Price + ComboPrice;
     public override string ToString() => string.Join(";", Id, ScreeningId, MovieTitle, RoomName, ShowTime.ToString("O"), Seat, IsVip, CustomerType, Price.ToString(CultureInfo.InvariantCulture), SoldAt.ToString("O"), ComboName, ComboPrice.ToString(CultureInfo.InvariantCulture));
     public static Ticket FromLine(string s)

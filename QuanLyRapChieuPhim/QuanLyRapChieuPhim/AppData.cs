@@ -13,6 +13,7 @@ public static class AppConfig
         try { return XDocument.Load(ConfigPath).Descendants("add").FirstOrDefault(x => (string?)x.Attribute("key") == key)?.Attribute("value")?.Value ?? fallback; }
         catch { return fallback; }
     }
+    // Vấn đáp: mọi con số (giá vé, % giảm, giờ trả vé, combo) đều đọc từ App.config — GV yêu cầu đổi chỉ sửa file cấu hình, không cần sửa code.
     public static decimal BaseTicketPrice => decimal.TryParse(Get("BaseTicketPrice","80000"), NumberStyles.Any, CultureInfo.InvariantCulture, out var n) ? n : 80000m;
     public static decimal StudentDiscount => decimal.TryParse(Get("StudentDiscount","0.15"), NumberStyles.Any, CultureInfo.InvariantCulture, out var n) ? n : .15m;
     public static decimal AdultDiscount => decimal.TryParse(Get("AdultDiscount","0"), NumberStyles.Any, CultureInfo.InvariantCulture, out var n) ? n : 0m;

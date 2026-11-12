@@ -4,11 +4,11 @@ namespace QuanLyRapChieuPhim;
 
 /// <summary>
 /// Phân hệ SV3 - Bán vé và doanh thu.
-/// - Danh sách hiển thị toàn bộ suất chiếu để nhân viên bán vé cho mọi suất.
+/// - Danh sách hiển thị các suất chiếu chưa bắt đầu để nhân viên bán vé.
 /// - Chọn suất chiếu, sơ đồ ghế tạo bằng Button trong code với 4 trạng thái.
 /// - Loại vé người lớn / học sinh - sinh viên, mức giảm đọc từ App.config.
 /// - Combo bắp nước bán kèm (nâng cao).
-/// - Timer làm mới danh sách suất và trạng thái ghế đã bán (nâng cao).
+/// - Timer tự ẩn suất đã bắt đầu chiếu và làm mới ghế đã bán (nâng cao).
 /// - Trả vé trước giờ chiếu 1 tiếng (nâng cao).
 /// - In vé ra tập tin TXT.
 /// </summary>
@@ -19,7 +19,9 @@ public partial class TicketForm : Form
     static readonly Color SeatSelected = Color.DeepSkyBlue;
     static readonly Color SeatSold = Color.IndianRed;
 
-    readonly HashSet<string> selected = new();
+    // Vấn đáp: 4 màu = 4 trạng thái ghế (trống / VIP / đang chọn / đã bán); GV yêu cầu đổi màu thì chỉ sửa 4 hằng số này.
+
+    readonly HashSet<string> selected = new(); // Vấn đáp: tập ghế đang chọn; HashSet vì thêm/bỏ/kiểm tra trùng nhanh, vé không cho trùng ghế.
 
     CinemaRoom? currentRoom;
     Screening? currentScreening;
@@ -73,6 +75,7 @@ public partial class TicketForm : Form
 
     void printButton_Click(object? sender, EventArgs e) => PrintSelectedTicket();
 
+    // Vấn đáp: Timer 20 giây tự ẩn suất đã bắt đầu + làm mới ghế đã bán; cờ selling tránh phá hộp thoại xác nhận đang mở.
     void refreshTimer_Tick(object? sender, EventArgs e)
     {
         // Không vẽ lại sơ đồ ghế khi hộp thoại xác nhận bán vé đang mở.
@@ -83,12 +86,15 @@ public partial class TicketForm : Form
     void TicketForm_FormClosed(object? sender, FormClosedEventArgs e) => refreshTimer.Stop();
 
     /// <summary>
-    /// Nạp toàn bộ suất chiếu để nhân viên bán vé cho mọi suất, kể cả suất đã lên lịch
-    /// từ trước. Timer gọi lại hàm này mỗi 20 giây để cập nhật suất mới thêm.
+    /// Nạp các suất chiếu chưa bắt đầu để bán vé. Suất đã bắt đầu hoặc đã chiếu xong
+    /// bị ẩn khỏi danh sách (theo yêu cầu nâng cao của đề bài). Timer gọi lại hàm này
+    /// mỗi 20 giây nên suất vừa hết giờ bán sẽ tự biến mất và suất mới thêm sẽ hiện ra.
     /// </summary>
     void RefreshScreenings()
     {
+        // Vấn đáp: chỉ lấy suất chưa bắt đầu để không bán được suất đã qua; Timer 20 giây tự ẩn suất vừa hết giờ khỏi màn hình bán vé.
         var list = AppData.Screenings
+            .Where(s => s.StartTime > DateTime.Now)
             .OrderBy(s => s.StartTime)
             .ToList();
 
@@ -174,6 +180,7 @@ public partial class TicketForm : Form
             Margin = new Padding(0, 0, 0, 10)
         });
 
+        // Vấn đáp: ghế tạo bằng code vì số hàng/ghế đọc từ dữ liệu phòng, đổi phòng không cần sửa giao diện; ghế đã bán Disable ngay từ đầu.
         for (int r = 1; r <= currentRoom.Rows; r++)
         {
             var rowPanel = new FlowLayoutPanel
@@ -232,6 +239,7 @@ public partial class TicketForm : Form
         UpdateCart();
     }
 
+    // Vấn đáp: bấm ghế = thêm/bỏ khỏi tập selected rồi đổi màu nút và tính lại tạm tính.
     void Toggle(string seat, Button button)
     {
         if (!selected.Add(seat))
@@ -266,6 +274,7 @@ public partial class TicketForm : Form
 
     SnackCombo? SelectedSnack => snack.SelectedItem as SnackCombo;
 
+    // Vấn đáp: giá = giá suất × phụ thu VIP × (1 − mức giảm trong App.config) → làm tròn + combo; dùng decimal để tiền chính xác từng đồng.
     decimal SeatPrice(string seat)
     {
         if (currentRoom == null || currentScreening == null)
@@ -359,12 +368,21 @@ public partial class TicketForm : Form
                 throw new Exception("Vui lòng chọn suất chiếu.");
             }
 
+            // Chốt chặn thứ hai: suất vừa hết giờ bán trong lúc màn hình đang mở
+            // (Timer chưa kịp làm mới) thì vẫn không được bán.
+            if (currentScreening.StartTime <= DateTime.Now)
+            {
+                RefreshScreenings();
+                throw new Exception("Suất chiếu đã bắt đầu nên không thể bán vé.");
+            }
+
             if (selected.Count == 0)
                 throw new Exception("Vui lòng chọn ít nhất một ghế trên sơ đồ.");
 
             var movie = AppData.Movies.FirstOrDefault(m => m.Id == currentScreening.MovieId)
                 ?? throw new Exception("Không tìm thấy phim của suất chiếu.");
 
+            // Vấn đáp: kiểm tra lại ngay trước khi ghi để ngăn 2 máy bán trùng một ghế.
             var duplicate = selected.FirstOrDefault(seat => AppData.Tickets.Any(
                 t => t.ScreeningId == currentScreening.Id && t.Seat == seat));
 
@@ -467,6 +485,7 @@ public partial class TicketForm : Form
                 throw new Exception("Vui lòng chọn vé cần trả trong danh sách vé đã bán.");
             }
 
+            // Vấn đáp: chỉ trả vé trước giờ chiếu RefundBeforeHours tiếng; biên bản lưu trave.txt để đối soát doanh thu.
             var remaining = ticket.ShowTime - DateTime.Now;
             var allowedBefore = TimeSpan.FromHours(AppConfig.RefundBeforeHours);
 
@@ -584,6 +603,7 @@ public partial class TicketForm : Form
         }
     }
 
+    // Vấn đáp: ghi vé TXT mã UTF-8 có BOM để Notepad trên Windows hiển thị đúng tiếng Việt.
     static bool SaveTicketFile(Ticket ticket, string path)
     {
         try
