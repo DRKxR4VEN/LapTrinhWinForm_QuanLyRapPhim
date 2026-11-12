@@ -14,6 +14,7 @@ namespace QuanLyRapChieuPhim
         private Panel fieldTitle;
         private Panel fieldGenre;
         private Panel fieldDuration;
+        private Panel fieldAge;
         private Panel posterField;
         private Panel content;
         private Panel previewPanel;
@@ -22,6 +23,7 @@ namespace QuanLyRapChieuPhim
         private Label lblTitle;
         private Label lblGenre;
         private Label lblDuration;
+        private Label lblAge;
         private Label lblPoster;
         private Label previewTitle;
         private Label listTitle;
@@ -29,6 +31,7 @@ namespace QuanLyRapChieuPhim
         private TextBox title;
         private TextBox genre;
         private TextBox duration;
+        private TextBox age;
         private TextBox poster;
         private PictureBox preview;
         private ListView list;
@@ -67,6 +70,9 @@ namespace QuanLyRapChieuPhim
             fieldDuration = new Panel();
             lblDuration = new Label();
             duration = new TextBox();
+            fieldAge = new Panel();
+            lblAge = new Label();
+            age = new TextBox();
             posterFlow = new FlowLayoutPanel();
             posterField = new Panel();
             lblPoster = new Label();
@@ -96,6 +102,7 @@ namespace QuanLyRapChieuPhim
             fieldTitle.SuspendLayout();
             fieldGenre.SuspendLayout();
             fieldDuration.SuspendLayout();
+            fieldAge.SuspendLayout();
             posterFlow.SuspendLayout();
             posterField.SuspendLayout();
             actionFlow.SuspendLayout();
@@ -182,6 +189,25 @@ namespace QuanLyRapChieuPhim
             fieldDuration.Margin = new Padding(0, 0, 10, 4);
             fieldDuration.Size = new Size(135, 58);
 
+            // lblAge
+            lblAge.AutoSize = true;
+            lblAge.ForeColor = Color.FromArgb(90, 100, 115);
+            lblAge.Location = new Point(0, 0);
+            lblAge.Text = "Giới hạn tuổi (P = 0)";
+
+            // age
+            age.BackColor = Color.White;
+            age.ForeColor = Color.FromArgb(35, 45, 60);
+            age.Location = new Point(0, 22);
+            age.Size = new Size(90, 23);
+
+            // fieldAge
+            fieldAge.BackColor = Color.FromArgb(245, 247, 250);
+            fieldAge.Controls.Add(lblAge);
+            fieldAge.Controls.Add(age);
+            fieldAge.Margin = new Padding(0, 0, 10, 4);
+            fieldAge.Size = new Size(150, 58);
+
             // fieldsFlow
             fieldsFlow.AutoSize = true;
             fieldsFlow.AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -190,6 +216,7 @@ namespace QuanLyRapChieuPhim
             fieldsFlow.Controls.Add(fieldTitle);
             fieldsFlow.Controls.Add(fieldGenre);
             fieldsFlow.Controls.Add(fieldDuration);
+            fieldsFlow.Controls.Add(fieldAge);
             fieldsFlow.Margin = new Padding(0);
             fieldsFlow.WrapContents = true;
 
@@ -449,6 +476,8 @@ namespace QuanLyRapChieuPhim
             fieldGenre.PerformLayout();
             fieldDuration.ResumeLayout(false);
             fieldDuration.PerformLayout();
+            fieldAge.ResumeLayout(false);
+            fieldAge.PerformLayout();
             posterFlow.ResumeLayout(false);
             posterField.ResumeLayout(false);
             posterField.PerformLayout();

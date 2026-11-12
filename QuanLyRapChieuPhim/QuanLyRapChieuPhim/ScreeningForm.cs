@@ -18,6 +18,10 @@ public partial class ScreeningForm : Form
         InitializeComponent();
         Ui.ApplyAppearance(this);
 
+        // Ở màn hình phóng to, MaximumSize cao 0 của Label bị scale thành vài pixel
+        // làm khung thông tin suất chiếu bị co lại; đặt lại chiều cao không giới hạn.
+        selectionInfo.MaximumSize = new Size(selectionInfo.MaximumSize.Width, 0);
+
         if (Ui.DesignTime)
             return;
 
@@ -38,6 +42,8 @@ public partial class ScreeningForm : Form
     void startDate_ValueChanged(object? sender, EventArgs e) => UpdatePreview();
 
     void startTime_ValueChanged(object? sender, EventArgs e) => UpdatePreview();
+
+    void price_ValueChanged(object? sender, EventArgs e) => UpdatePreview();
 
     void tree_AfterSelect(object? sender, TreeViewEventArgs e) => ShowSelection();
 
@@ -101,7 +107,14 @@ public partial class ScreeningForm : Form
 
         startDate.Value = suggestion.Date;
         startTime.Value = suggestion;
+
+        price.Value = Math.Clamp(
+            AppConfig.BaseTicketPrice,
+            price.Minimum,
+            price.Maximum);
     }
+
+    decimal GetPrice() => decimal.Round(price.Value, 0);
 
     DateTime GetStartTime()
     {
@@ -121,7 +134,9 @@ public partial class ScreeningForm : Form
 
         movieInfo.Text =
             $"Thời lượng phim: {selectedMovie.DurationMinutes} phút  •  " +
-            $"Dọn phòng: {AppConfig.CleaningMinutes} phút";
+            $"Dọn phòng: {AppConfig.CleaningMinutes} phút\r\n" +
+            $"Giá vé cơ bản: {Ui.Money(GetPrice())}  •  " +
+            $"Ghế VIP ×{AppConfig.VipSurcharge:0.##}";
 
         var start = GetStartTime();
         var finish = start.AddMinutes(selectedMovie.DurationMinutes);
@@ -161,6 +176,12 @@ public partial class ScreeningForm : Form
                 throw new Exception("Giờ bắt đầu phải sau thời điểm hiện tại.");
             }
 
+            if (GetPrice() <= 0)
+            {
+                price.Focus();
+                throw new Exception("Giá vé cơ bản phải lớn hơn 0.");
+            }
+
             var candidate = new Screening
             {
                 Id = NextScreeningId(),
@@ -168,7 +189,8 @@ public partial class ScreeningForm : Form
                 RoomId = selectedRoom.Id,
                 StartTime = startAt,
                 MovieTitle = selectedMovie.Title,
-                RoomName = selectedRoom.Name
+                RoomName = selectedRoom.Name,
+                Price = GetPrice()
             };
 
             var conflict = AppData.FindConflict(candidate, selectedMovie);
@@ -316,6 +338,7 @@ public partial class ScreeningForm : Form
                             var node = movieNode.Nodes.Add(
                                 $"{screening.StartTime:HH:mm} - {free:HH:mm}  |  " +
                                 $"{selectedRoom?.Name ?? screening.RoomName}  |  " +
+                                $"{Ui.Money(screening.Price)}  |  " +
                                 $"{sold}/{capacity} vé");
 
                             node.Tag = screening;
@@ -324,6 +347,7 @@ public partial class ScreeningForm : Form
                                 $"Phòng: {selectedRoom?.Name ?? screening.RoomName}\n" +
                                 $"Bắt đầu: {screening.StartTime:HH:mm dd/MM/yyyy}\n" +
                                 $"Kết thúc: {finish:HH:mm} (dọn phòng đến {free:HH:mm})\n" +
+                                $"Giá vé cơ bản: {Ui.Money(screening.Price)}\n" +
                                 $"Đã bán: {sold}/{capacity} vé";
 
                             if (free <= DateTime.Now)
@@ -404,6 +428,7 @@ public partial class ScreeningForm : Form
             $"Bắt đầu: {screening.StartTime:HH:mm dd/MM/yyyy}\r\n" +
             $"Kết thúc phim: {finish:HH:mm}\r\n" +
             $"Phòng trống lại: {free:HH:mm} (+{AppConfig.CleaningMinutes} phút dọn phòng)\r\n" +
+            $"Giá vé cơ bản: {Ui.Money(screening.Price)}\r\n" +
             $"Vé đã bán: {sold}/{capacity}";
 
         selectionInfo.ForeColor = sold >= capacity && capacity > 0

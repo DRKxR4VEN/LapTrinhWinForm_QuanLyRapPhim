@@ -4,10 +4,11 @@ namespace QuanLyRapChieuPhim;
 
 /// <summary>
 /// Phân hệ SV3 - Bán vé và doanh thu.
+/// - Danh sách hiển thị toàn bộ suất chiếu để nhân viên bán vé cho mọi suất.
 /// - Chọn suất chiếu, sơ đồ ghế tạo bằng Button trong code với 4 trạng thái.
 /// - Loại vé người lớn / học sinh - sinh viên, mức giảm đọc từ App.config.
 /// - Combo bắp nước bán kèm (nâng cao).
-/// - Timer tự ẩn suất đã bắt đầu chiếu (nâng cao).
+/// - Timer làm mới danh sách suất và trạng thái ghế đã bán (nâng cao).
 /// - Trả vé trước giờ chiếu 1 tiếng (nâng cao).
 /// - In vé ra tập tin TXT.
 /// </summary>
@@ -82,13 +83,12 @@ public partial class TicketForm : Form
     void TicketForm_FormClosed(object? sender, FormClosedEventArgs e) => refreshTimer.Stop();
 
     /// <summary>
-    /// Nạp danh sách suất chiếu chưa bắt đầu. Timer gọi lại hàm này mỗi 20 giây
-    /// nên suất vừa tới giờ chiếu sẽ tự biến mất khỏi màn hình bán vé.
+    /// Nạp toàn bộ suất chiếu để nhân viên bán vé cho mọi suất, kể cả suất đã lên lịch
+    /// từ trước. Timer gọi lại hàm này mỗi 20 giây để cập nhật suất mới thêm.
     /// </summary>
     void RefreshScreenings()
     {
         var list = AppData.Screenings
-            .Where(s => s.StartTime > DateTime.Now)
             .OrderBy(s => s.StartTime)
             .ToList();
 
@@ -122,7 +122,7 @@ public partial class TicketForm : Form
         BuildSeats();
 
         if (lostSelection)
-            status.Text = "Suất chiếu vừa bắt đầu đã được ẩn khỏi danh sách bán vé.";
+            status.Text = "Suất chiếu đang chọn không còn trong danh sách bán vé.";
     }
 
     void BuildSeats()
@@ -268,14 +268,14 @@ public partial class TicketForm : Form
 
     decimal SeatPrice(string seat)
     {
-        if (currentRoom == null)
+        if (currentRoom == null || currentScreening == null)
             return 0;
 
         decimal discount = student.Checked
             ? AppConfig.StudentDiscount
             : AppConfig.AdultDiscount;
 
-        decimal price = AppConfig.BaseTicketPrice
+        decimal price = currentScreening.Price
             * (IsVipSeat(seat) ? AppConfig.VipSurcharge : 1m)
             * (1 - discount);
 
@@ -359,12 +359,6 @@ public partial class TicketForm : Form
                 throw new Exception("Vui lòng chọn suất chiếu.");
             }
 
-            if (currentScreening.StartTime <= DateTime.Now)
-            {
-                RefreshScreenings();
-                throw new Exception("Suất chiếu đã bắt đầu nên không thể bán vé.");
-            }
-
             if (selected.Count == 0)
                 throw new Exception("Vui lòng chọn ít nhất một ghế trên sơ đồ.");
 
@@ -392,7 +386,7 @@ public partial class TicketForm : Form
             {
                 bool vip = IsVipSeat(seat);
                 decimal price = decimal.Round(
-                    AppConfig.BaseTicketPrice
+                    currentScreening.Price
                     * (vip ? AppConfig.VipSurcharge : 1m)
                     * (1 - discount),
                     0);

@@ -68,6 +68,7 @@ public partial class LoginForm : Form
             return;
         }
 
+        fails.Remove(name);
         AppData.SaveLoginMemory(name, remember.Checked);
         CurrentUser = found;
         DialogResult = DialogResult.OK;

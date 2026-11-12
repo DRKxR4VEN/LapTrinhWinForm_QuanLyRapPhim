@@ -2,6 +2,8 @@ namespace QuanLyRapChieuPhim;
 
 public partial class MovieForm : Form
 {
+    string genreFilter = "";
+
     public MovieForm()
     {
         InitializeComponent();
@@ -79,6 +81,7 @@ public partial class MovieForm : Form
                 movie.Genre = updated.Genre;
                 movie.DurationMinutes = updated.DurationMinutes;
                 movie.PosterPath = updated.PosterPath;
+                movie.AgeLimit = updated.AgeLimit;
             }
             else if (action == "Xóa")
             {
@@ -115,13 +118,12 @@ public partial class MovieForm : Form
             else if (action == "Lọc thể loại")
             {
                 var genreText = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Nhập thể loại cần lọc:", "Lọc phim");
+                    "Nhập thể loại cần lọc (để trống để bỏ lọc):",
+                    "Lọc phim",
+                    genreFilter);
 
-                grid.DataSource = AppData.Movies
-                    .Where(x => x.Genre.Contains(genreText, StringComparison.OrdinalIgnoreCase))
-                    .Select(x => new { x.Id, x.Title, x.Genre, x.DurationMinutes })
-                    .ToList();
-                ApplyHeaders();
+                genreFilter = genreText.Trim();
+                RefreshData();
                 return;
             }
             else if (action == "Làm mới")
@@ -130,7 +132,9 @@ public partial class MovieForm : Form
                 title.Clear();
                 genre.Clear();
                 duration.Clear();
+                age.Clear();
                 poster.Clear();
+                genreFilter = "";
                 preview.Image = PosterPlaceholder("Phim", 120, 150, 24);
             }
 
@@ -166,27 +170,56 @@ public partial class MovieForm : Form
             }
 
             var parts = line.Split(',');
-            if (parts.Length >= 4 &&
-                !string.IsNullOrWhiteSpace(parts[0]) &&
-                !string.IsNullOrWhiteSpace(parts[1]) &&
-                !AppData.Movies.Any(m => m.Id == parts[0].Trim()) &&
-                int.TryParse(parts[3], out var minutes) &&
-                minutes > 0)
-            {
-                AppData.Movies.Add(new Movie
-                {
-                    Id = parts[0].Trim(),
-                    Title = parts[1].Trim(),
-                    Genre = parts[2].Trim(),
-                    DurationMinutes = minutes,
-                    PosterPath = parts.Length > 4 ? parts[4].Trim() : ""
-                });
-                added++;
-            }
-            else
+            if (parts.Length < 4 ||
+                string.IsNullOrWhiteSpace(parts[0]) ||
+                string.IsNullOrWhiteSpace(parts[1]) ||
+                AppData.Movies.Any(m => m.Id == parts[0].Trim()) ||
+                !int.TryParse(parts[3].Trim(), out var minutes) ||
+                minutes <= 0)
             {
                 skipped++;
+                continue;
             }
+
+            // Hỗ trợ cả CSV 4 cột (Ma,Ten,TheLoai,ThoiLuong) lẫn 5-6 cột có
+            // giới hạn tuổi (P/T13/T16/T18 hoặc số) và đường dẫn poster.
+            var ageLimit = 0;
+            var posterPath = "";
+
+            if (parts.Length > 4)
+            {
+                if (LooksLikeAge(parts[4]))
+                {
+                    if (!TryParseAgeLimit(parts[4], out ageLimit))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    if (parts.Length > 5 && !string.IsNullOrWhiteSpace(parts[5]))
+                        posterPath = parts[5].Trim();
+                }
+                else
+                {
+                    posterPath = parts[4].Trim();
+                    if (parts.Length > 5 && !TryParseAgeLimit(parts[5], out ageLimit))
+                    {
+                        skipped++;
+                        continue;
+                    }
+                }
+            }
+
+            AppData.Movies.Add(new Movie
+            {
+                Id = parts[0].Trim(),
+                Title = parts[1].Trim(),
+                Genre = parts[2].Trim(),
+                DurationMinutes = minutes,
+                PosterPath = posterPath,
+                AgeLimit = ageLimit
+            });
+            added++;
         }
 
         if (skipped > 0)
@@ -233,22 +266,78 @@ public partial class MovieForm : Form
             Title = title.Text.Trim(),
             Genre = genre.Text.Trim(),
             DurationMinutes = minutes,
-            PosterPath = poster.Text.Trim()
+            PosterPath = poster.Text.Trim(),
+            AgeLimit = ParseAgeLimit()
         };
     }
 
+    int ParseAgeLimit()
+    {
+        if (TryParseAgeLimit(age.Text, out var limit))
+            return limit;
+
+        age.Focus();
+        throw new Exception(
+            "Giới hạn tuổi phải là P (mọi lứa tuổi) hoặc số từ 1 đến 18.");
+    }
+
+    static bool TryParseAgeLimit(string text, out int limit)
+    {
+        limit = 0;
+        text = text.Trim();
+
+        if (text.Length == 0 ||
+            text.Equals("P", StringComparison.OrdinalIgnoreCase) ||
+            text.Equals("K", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (text.StartsWith("T", StringComparison.OrdinalIgnoreCase))
+            text = text[1..].Trim();
+
+        return int.TryParse(text, out limit) && limit is >= 1 and <= 18;
+    }
+
+    static bool LooksLikeAge(string text)
+    {
+        text = text.Trim();
+        return text.Length == 0 ||
+               text.Equals("P", StringComparison.OrdinalIgnoreCase) ||
+               text.Equals("K", StringComparison.OrdinalIgnoreCase) ||
+               text.StartsWith("T", StringComparison.OrdinalIgnoreCase) ||
+               int.TryParse(text, out _);
+    }
+
+    static string AgeLabel(int limit) => limit <= 0 ? "P" : $"T{limit}";
+
     void RefreshData()
     {
-        grid.DataSource = AppData.Movies
-            .Select(x => new { x.Id, x.Title, x.Genre, x.DurationMinutes })
+        var movies = string.IsNullOrWhiteSpace(genreFilter)
+            ? AppData.Movies
+            : AppData.Movies
+                .Where(x => x.Genre.Contains(genreFilter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+        grid.DataSource = movies
+            .Select(x => new
+            {
+                x.Id,
+                x.Title,
+                x.Genre,
+                x.DurationMinutes,
+                AgeLimit = AgeLabel(x.AgeLimit)
+            })
             .ToList();
 
         ApplyHeaders();
 
+        listTitle.Text = string.IsNullOrWhiteSpace(genreFilter)
+            ? "DANH SÁCH PHIM"
+            : $"DANH SÁCH PHIM • {genreFilter}";
+
         list.Items.Clear();
         posterImages.Images.Clear();
 
-        foreach (var movie in AppData.Movies)
+        foreach (var movie in movies)
         {
             try
             {
@@ -267,7 +356,10 @@ public partial class MovieForm : Form
                 posterImages.Images.Add(PosterPlaceholder(movie.Title, 64, 80, 20));
             }
 
-            list.Items.Add(new ListViewItem(movie.Title, posterImages.Images.Count - 1));
+            list.Items.Add(new ListViewItem(movie.Title, posterImages.Images.Count - 1)
+            {
+                Tag = movie
+            });
         }
     }
 
@@ -277,6 +369,7 @@ public partial class MovieForm : Form
         SetHeader("Title", "Tên phim");
         SetHeader("Genre", "Thể loại");
         SetHeader("DurationMinutes", "Thời lượng");
+        SetHeader("AgeLimit", "Giới hạn tuổi");
     }
 
     void SetHeader(string column, string text)
@@ -302,14 +395,11 @@ public partial class MovieForm : Form
 
     void ActivateListItem()
     {
-        if (list.SelectedIndices.Count == 0)
+        if (list.SelectedItems.Count == 0 ||
+            list.SelectedItems[0].Tag is not Movie movie)
             return;
 
-        var index = list.SelectedIndices[0];
-        if (index < 0 || index >= AppData.Movies.Count)
-            return;
-
-        ShowMovie(AppData.Movies[index]);
+        ShowMovie(movie);
     }
 
     void ShowMovie(Movie movie)
@@ -318,6 +408,7 @@ public partial class MovieForm : Form
         title.Text = movie.Title;
         genre.Text = movie.Genre;
         duration.Text = movie.DurationMinutes.ToString();
+        age.Text = AgeLabel(movie.AgeLimit);
         poster.Text = movie.PosterPath;
 
         try

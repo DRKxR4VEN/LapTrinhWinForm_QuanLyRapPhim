@@ -26,6 +26,9 @@ namespace QuanLyRapChieuPhim
         private Label dateLabel;
         private DateTimePicker startDate;
         private DateTimePicker startTime;
+        private Panel priceField;
+        private Label priceLabel;
+        private NumericUpDown price;
         private Label movieInfo;
         private Label endInfo;
         private FlowLayoutPanel buttonsFlow;
@@ -68,6 +71,9 @@ namespace QuanLyRapChieuPhim
             dateLabel = new Label();
             startDate = new DateTimePicker();
             startTime = new DateTimePicker();
+            priceField = new Panel();
+            priceLabel = new Label();
+            price = new NumericUpDown();
             movieInfo = new Label();
             endInfo = new Label();
             buttonsFlow = new FlowLayoutPanel();
@@ -87,6 +93,8 @@ namespace QuanLyRapChieuPhim
             movieField.SuspendLayout();
             roomField.SuspendLayout();
             dateField.SuspendLayout();
+            priceField.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)price).BeginInit();
             buttonsFlow.SuspendLayout();
             SuspendLayout();
 
@@ -202,6 +210,29 @@ namespace QuanLyRapChieuPhim
             dateField.Margin = new Padding(0, 0, 0, 2);
             dateField.Size = new Size(380, 58);
 
+            // priceLabel
+            priceLabel.AutoSize = true;
+            priceLabel.ForeColor = Color.FromArgb(90, 100, 115);
+            priceLabel.Location = new Point(0, 0);
+            priceLabel.Text = "Giá vé cơ bản (đ)";
+
+            // price
+            price.BackColor = Color.White;
+            price.ForeColor = Color.FromArgb(35, 45, 60);
+            price.Increment = new decimal(new int[] { 5000, 0, 0, 0 });
+            price.Location = new Point(0, 22);
+            price.Maximum = new decimal(new int[] { 10000000, 0, 0, 0 });
+            price.Size = new Size(180, 23);
+            price.ThousandsSeparator = true;
+            price.ValueChanged += price_ValueChanged;
+
+            // priceField
+            priceField.BackColor = Color.White;
+            priceField.Controls.Add(priceLabel);
+            priceField.Controls.Add(price);
+            priceField.Margin = new Padding(0, 0, 0, 2);
+            priceField.Size = new Size(380, 58);
+
             // movieInfo
             movieInfo.AutoSize = true;
             movieInfo.ForeColor = Color.FromArgb(90, 100, 115);
@@ -300,6 +331,7 @@ namespace QuanLyRapChieuPhim
             formPanel.Controls.Add(movieField);
             formPanel.Controls.Add(roomField);
             formPanel.Controls.Add(dateField);
+            formPanel.Controls.Add(priceField);
             formPanel.Controls.Add(movieInfo);
             formPanel.Controls.Add(endInfo);
             formPanel.Controls.Add(buttonsFlow);
@@ -361,6 +393,9 @@ namespace QuanLyRapChieuPhim
             roomField.PerformLayout();
             dateField.ResumeLayout(false);
             dateField.PerformLayout();
+            priceField.ResumeLayout(false);
+            priceField.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)price).EndInit();
             buttonsFlow.ResumeLayout(false);
             ResumeLayout(false);
         }

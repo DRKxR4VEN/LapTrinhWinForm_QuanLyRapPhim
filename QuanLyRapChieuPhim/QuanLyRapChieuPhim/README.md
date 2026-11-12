@@ -32,11 +32,14 @@ nên Designer chỉ hiển thị khung chứa tương ứng.
 
 ## Các chức năng
 - Đăng nhập đọc `Data/users.txt`, khóa tài khoản sau 3 lần sai trong phiên chạy.
-- Quản lý phim, chọn poster, lọc thể loại, nhập CSV.
+- Quản lý phim, chọn poster, lọc thể loại (áp dụng cho cả bảng và danh sách poster), nhập CSV.
+- Mỗi phim có giới hạn tuổi (P/T13/T16/T18 hoặc 0 = mọi lứa tuổi).
 - Quản lý phòng chiếu, số hàng/ghế và hàng VIP.
-- Quản lý suất chiếu dạng cây Ngày -> Phim -> Suất; kiểm tra trùng lịch theo thời lượng phim + 15 phút dọn phòng; không hủy suất đã bán vé.
+- Quản lý suất chiếu dạng cây Ngày -> Phim -> Suất; mỗi suất có giá vé cơ bản riêng;
+  kiểm tra trùng lịch theo thời lượng phim + 15 phút dọn phòng; không hủy suất đã bán vé.
 - Suất chiếu được lưu trong `Data/screenings.txt`, mỗi dòng:
-  `MaSuat;MaPhim;MaPhong;NgayGioISO;TenPhim;TenPhong`.
+  `MaSuat;MaPhim;MaPhong;NgayGioISO;TenPhim;TenPhong;GiaVe`
+  (suất cũ chưa có trường giá sẽ dùng `BaseTicketPrice` trong `App.config`).
 - MDI, cấu hình giao diện lưu Registry, sao lưu/khôi phục dữ liệu, ghi lỗi vào `Data/log.txt`.
 
 ### Phân hệ SV3 - Bán vé & doanh thu
@@ -44,15 +47,16 @@ nên Designer chỉ hiển thị khung chứa tương ứng.
   trống (xanh lá), VIP (vàng), đang chọn (xanh dương), đã bán (đỏ).
   Ghế đã bán bị khóa nên không thể bán trùng.
 - Loại vé người lớn / học sinh - sinh viên (`RadioButton`), mức giảm đọc từ `App.config`.
-  Giá vé = giá gốc × phụ thu VIP × (1 - mức giảm).
+  Giá vé = giá vé của suất đang chọn × phụ thu VIP × (1 - mức giảm).
 - Xác nhận trước khi bán, in mỗi vé ra `Data/Ve_<MaVe>.txt` (UTF-8);
   nút **In lại vé** dùng `SaveFileDialog` để lưu vé đã bán ra vị trí khác.
 - **Nâng cao 1 - combo bắp nước:** `ComboBox` chọn combo bán kèm, giá trong `App.config`.
 - **Nâng cao 2 - trả vé trước giờ chiếu:** danh sách vé đã bán của suất đang chọn
   (`ListView` Details); chỉ nhận trả khi còn ít nhất 1 tiếng trước giờ chiếu,
   có `MessageBox` xác nhận, hoàn tiền và ghi biên bản vào `Data/trave.txt`.
-- **Nâng cao 3 - Timer tự ẩn suất đã chiếu:** `Timer` 20 giây làm mới danh sách suất;
-  suất vừa tới giờ chiếu tự biến mất khỏi màn hình bán vé.
+- **Nâng cao 3 - Timer làm mới danh sách:** `Timer` 20 giây nạp lại danh sách suất chiếu
+  và trạng thái ghế đã bán; danh sách hiển thị toàn bộ suất chiếu để nhân viên bán vé
+  cho mọi suất, không chỉ suất vừa thêm.
 - Thống kê doanh thu 2 chế độ: **theo phim** và **theo ngày**, có biểu đồ cột vẽ bằng GDI+,
   tổng hợp doanh thu vé + bắp nước - tiền hoàn.
 - Xuất báo cáo bằng `SaveFileDialog` ra **CSV** (tab đang xem) hoặc **TXT** (đầy đủ 2 bảng,
@@ -73,9 +77,10 @@ nên Designer chỉ hiển thị khung chứa tương ứng.
 
 ## Định dạng dữ liệu trong thư mục Data
 Tất cả tập tin `.txt` dùng UTF-8, mỗi dòng một bản ghi, các trường ngăn cách bằng `;`:
-- `movies.txt`: `Ma;Ten;TheLoai;ThoiLuong;Poster`
+- `movies.txt`: `Ma;Ten;TheLoai;ThoiLuong;Poster;GioiHanTuoi`
+  (`GioiHanTuoi` = 0 nghĩa là P; dữ liệu cũ 5 trường vẫn đọc được)
 - `rooms.txt`: `Ma;Ten;SoHang;SoGheMoiHang;HangVIP`
-- `screenings.txt`: `Ma;MaPhim;MaPhong;NgayGioISO;TenPhim;TenPhong`
+- `screenings.txt`: `Ma;MaPhim;MaPhong;NgayGioISO;TenPhim;TenPhong;GiaVe`
 - `tickets.txt`: `Ma;MaSuat;TenPhim;TenPhong;NgayGioISO;Ghe;VIP;LoaiVe;Gia;NgayBanISO;Combo;GiaCombo`
   (hai trường `Combo;GiaCombo` được thêm ở phân hệ SV3; dữ liệu vé cũ chỉ có 10 trường vẫn đọc được)
 - `trave.txt`: `MaVe;MaSuat;TenPhim;TenPhong;Ghe;LoaiVe;Combo;SoTienHoan;GioChieuISO;ThoiGianTraISO`
@@ -86,9 +91,12 @@ Bộ dữ liệu mẫu hiện có 6 phim, 4 phòng chiếu, 33 suất chiếu, 5
 
 ## Định dạng CSV nhập phim
 Tạo file CSV với dòng đầu là tiêu đề, các dòng sau theo thứ tự:
-`MaPhim,TenPhim,TheLoai,ThoiLuongPhut`
+`MaPhim,TenPhim,TheLoai,ThoiLuongPhut[,GioiHanTuoi][,Poster]`
 Ví dụ:
-`P001,Lat Mat,Han dong,120`
+`P001,Lat Mat,Han dong,120,T16`
+`P002,Doraemon,Hoat hinh,95,P,C:\Poster\doraemon.jpg`
+
+Giới hạn tuổi nhận `P` (hoặc `K`, `0`) hay `T13`, `T16`, `T18`; cột poster có thể bỏ trống.
 
 Lưu ý: bản demo sử dụng dấu phẩy để tách cột; tên phim/thể loại không nên chứa dấu phẩy.
 

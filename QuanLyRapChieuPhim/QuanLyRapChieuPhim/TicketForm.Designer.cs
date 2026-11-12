@@ -7,12 +7,14 @@ namespace QuanLyRapChieuPhim
         private System.ComponentModel.IContainer components = null;
 
         private FlowLayoutPanel topPanel;
+        private FlowLayoutPanel screeningGroup;
         private Label lblScreening;
         private ComboBox screening;
         private FlowLayoutPanel typePanel;
         private Label lblType;
         private RadioButton adult;
         private RadioButton student;
+        private FlowLayoutPanel snackGroup;
         private Label lblSnack;
         private ComboBox snack;
         private Button sellButton;
@@ -43,7 +45,9 @@ namespace QuanLyRapChieuPhim
         {
             components = new System.ComponentModel.Container();
             topPanel = new FlowLayoutPanel();
+            screeningGroup = new FlowLayoutPanel();
             typePanel = new FlowLayoutPanel();
+            snackGroup = new FlowLayoutPanel();
             adult = new RadioButton();
             student = new RadioButton();
             lblScreening = new Label();
@@ -67,7 +71,9 @@ namespace QuanLyRapChieuPhim
             seats = new FlowLayoutPanel();
             refreshTimer = new System.Windows.Forms.Timer(components);
             topPanel.SuspendLayout();
+            screeningGroup.SuspendLayout();
             typePanel.SuspendLayout();
+            snackGroup.SuspendLayout();
             rightPanel.SuspendLayout();
             actionsPanel.SuspendLayout();
             bottomPanel.SuspendLayout();
@@ -84,8 +90,17 @@ namespace QuanLyRapChieuPhim
             // screening
             screening.DropDownStyle = ComboBoxStyle.DropDownList;
             screening.Margin = new Padding(3, 4, 3, 4);
-            screening.Size = new Size(430, 23);
+            screening.Size = new Size(280, 23);
             screening.SelectedIndexChanged += screening_SelectedIndexChanged;
+
+            // screeningGroup
+            screeningGroup.AutoSize = true;
+            screeningGroup.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            screeningGroup.BackColor = Color.FromArgb(245, 247, 250);
+            screeningGroup.Controls.Add(lblScreening);
+            screeningGroup.Controls.Add(screening);
+            screeningGroup.Margin = new Padding(0, 0, 10, 0);
+            screeningGroup.WrapContents = false;
 
             // lblType
             lblType.AutoSize = true;
@@ -130,8 +145,17 @@ namespace QuanLyRapChieuPhim
             // snack
             snack.DropDownStyle = ComboBoxStyle.DropDownList;
             snack.Margin = new Padding(3, 4, 3, 4);
-            snack.Size = new Size(235, 23);
+            snack.Size = new Size(185, 23);
             snack.SelectedIndexChanged += snack_SelectedIndexChanged;
+
+            // snackGroup
+            snackGroup.AutoSize = true;
+            snackGroup.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            snackGroup.BackColor = Color.FromArgb(245, 247, 250);
+            snackGroup.Controls.Add(lblSnack);
+            snackGroup.Controls.Add(snack);
+            snackGroup.Margin = new Padding(0, 0, 10, 0);
+            snackGroup.WrapContents = false;
 
             // sellButton
             sellButton.AutoSize = true;
@@ -148,12 +172,11 @@ namespace QuanLyRapChieuPhim
 
             // topPanel
             topPanel.AutoSize = true;
+            topPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             topPanel.BackColor = Color.FromArgb(245, 247, 250);
-            topPanel.Controls.Add(lblScreening);
-            topPanel.Controls.Add(screening);
+            topPanel.Controls.Add(screeningGroup);
             topPanel.Controls.Add(typePanel);
-            topPanel.Controls.Add(lblSnack);
-            topPanel.Controls.Add(snack);
+            topPanel.Controls.Add(snackGroup);
             topPanel.Controls.Add(sellButton);
             topPanel.Dock = DockStyle.Top;
             topPanel.Padding = new Padding(10);
@@ -168,10 +191,10 @@ namespace QuanLyRapChieuPhim
             // soldList
             soldList.BackColor = Color.White;
             soldList.BorderStyle = BorderStyle.FixedSingle;
-            soldList.Columns.Add("Ghế", 42);
+            soldList.Columns.Add("Ghế", 44);
             soldList.Columns.Add("Loại vé", 92);
-            soldList.Columns.Add("Tổng", 80);
-            soldList.Columns.Add("Bán lúc", 86);
+            soldList.Columns.Add("Tổng", 86);
+            soldList.Columns.Add("Bán lúc", 98);
             soldList.Dock = DockStyle.Fill;
             soldList.ForeColor = Color.FromArgb(35, 45, 60);
             soldList.FullRowSelect = true;
@@ -294,8 +317,12 @@ namespace QuanLyRapChieuPhim
             FormClosed += TicketForm_FormClosed;
             topPanel.ResumeLayout(false);
             topPanel.PerformLayout();
+            screeningGroup.ResumeLayout(false);
+            screeningGroup.PerformLayout();
             typePanel.ResumeLayout(false);
             typePanel.PerformLayout();
+            snackGroup.ResumeLayout(false);
+            snackGroup.PerformLayout();
             rightPanel.ResumeLayout(false);
             actionsPanel.ResumeLayout(false);
             actionsPanel.PerformLayout();

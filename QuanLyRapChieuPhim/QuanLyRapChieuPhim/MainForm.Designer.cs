@@ -12,6 +12,8 @@ namespace QuanLyRapChieuPhim
         private ToolStripMenuItem restoreItem;
         private ToolStripSeparator systemSeparator;
         private ToolStripMenuItem appearanceItem;
+        private ToolStripMenuItem logoutItem;
+        private ToolStripSeparator exitSeparator;
         private ToolStripMenuItem exitItem;
         private ToolStripMenuItem manageMenu;
         private ToolStripMenuItem movieItem;
@@ -46,6 +48,8 @@ namespace QuanLyRapChieuPhim
             restoreItem = new ToolStripMenuItem();
             systemSeparator = new ToolStripSeparator();
             appearanceItem = new ToolStripMenuItem();
+            logoutItem = new ToolStripMenuItem();
+            exitSeparator = new ToolStripSeparator();
             exitItem = new ToolStripMenuItem();
             manageMenu = new ToolStripMenuItem();
             movieItem = new ToolStripMenuItem();
@@ -69,7 +73,8 @@ namespace QuanLyRapChieuPhim
             // systemMenu
             systemMenu.DropDownItems.AddRange(new ToolStripItem[]
             {
-                backupItem, restoreItem, systemSeparator, appearanceItem, exitItem
+                backupItem, restoreItem, systemSeparator, appearanceItem,
+                logoutItem, exitSeparator, exitItem
             });
             systemMenu.Text = "Hệ thống";
 
@@ -84,6 +89,10 @@ namespace QuanLyRapChieuPhim
             // appearanceItem
             appearanceItem.Text = "Đổi giao diện";
             appearanceItem.Click += appearanceItem_Click;
+
+            // logoutItem
+            logoutItem.Text = "Đăng xuất";
+            logoutItem.Click += logoutItem_Click;
 
             // exitItem
             exitItem.Text = "Thoát";

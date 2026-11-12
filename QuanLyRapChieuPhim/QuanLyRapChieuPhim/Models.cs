@@ -9,8 +9,23 @@ public class Movie
     public string Genre { get; set; } = "";
     public int DurationMinutes { get; set; }
     public string PosterPath { get; set; } = "";
-    public override string ToString() => string.Join(";", Id, Title, Genre, DurationMinutes, PosterPath);
-    public static Movie FromLine(string s) { var p=s.Split(';'); return new Movie { Id=p[0], Title=p[1], Genre=p[2], DurationMinutes=int.Parse(p[3]), PosterPath=p.Length>4?p[4]:"" }; }
+    /// <summary>Độ tuổi tối thiểu được xem; 0 nghĩa là phim dành cho mọi lứa tuổi.</summary>
+    public int AgeLimit { get; set; }
+    public override string ToString() => string.Join(";", Id, Title, Genre, DurationMinutes, PosterPath, AgeLimit);
+    public static Movie FromLine(string s)
+    {
+        var p = s.Split(';');
+        return new Movie
+        {
+            Id = p[0],
+            Title = p[1],
+            Genre = p[2],
+            DurationMinutes = int.Parse(p[3]),
+            PosterPath = p.Length > 4 ? p[4] : "",
+            // Trường độ tuổi được thêm sau; dữ liệu cũ chỉ có 5 trường.
+            AgeLimit = p.Length > 5 && int.TryParse(p[5], out var age) ? age : 0
+        };
+    }
 }
 
 public class CinemaRoom
@@ -33,10 +48,28 @@ public class Screening
     public DateTime StartTime { get; set; }
     public string MovieTitle { get; set; } = "";
     public string RoomName { get; set; } = "";
+    /// <summary>Giá vé cơ bản của riêng suất chiếu (chưa gồm phụ thu VIP và giảm giá).</summary>
+    public decimal Price { get; set; } = AppConfig.BaseTicketPrice;
     public DateTime EndTime(int duration) => StartTime.AddMinutes(duration + AppConfig.CleaningMinutes);
-    public string Display => $"{MovieTitle} | {RoomName} | {StartTime:HH:mm dd/MM/yyyy}";
-    public override string ToString() => string.Join(";", Id, MovieId, RoomId, StartTime.ToString("O"), MovieTitle, RoomName);
-    public static Screening FromLine(string s) { var p=s.Split(';'); return new Screening { Id=p[0], MovieId=p[1], RoomId=p[2], StartTime=DateTime.Parse(p[3], null, DateTimeStyles.RoundtripKind), MovieTitle=p.Length>4?p[4]:"", RoomName=p.Length>5?p[5]:"" }; }
+    public string Display => $"{MovieTitle} | {RoomName} | {StartTime:HH:mm dd/MM/yyyy} | {Ui.Money(Price)}";
+    public override string ToString() => string.Join(";", Id, MovieId, RoomId, StartTime.ToString("O"), MovieTitle, RoomName, Price.ToString(CultureInfo.InvariantCulture));
+    public static Screening FromLine(string s)
+    {
+        var p = s.Split(';');
+        return new Screening
+        {
+            Id = p[0],
+            MovieId = p[1],
+            RoomId = p[2],
+            StartTime = DateTime.Parse(p[3], null, DateTimeStyles.RoundtripKind),
+            MovieTitle = p.Length > 4 ? p[4] : "",
+            RoomName = p.Length > 5 ? p[5] : "",
+            // Trường giá vé được thêm sau; suất cũ dùng giá gốc trong App.config.
+            Price = p.Length > 6 && decimal.TryParse(p[6], NumberStyles.Any, CultureInfo.InvariantCulture, out var price)
+                ? price
+                : AppConfig.BaseTicketPrice
+        };
+    }
 }
 
 public class Ticket
